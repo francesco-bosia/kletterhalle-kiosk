@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Transaction logs
+transactions/*.jsonl
+!transactions/.gitkeep

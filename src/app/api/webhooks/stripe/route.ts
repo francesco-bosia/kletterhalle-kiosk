@@ -70,6 +70,19 @@ export async function POST(request: NextRequest) {
             amount: session.amount_total,
           });
 
+          // Log transaction locally
+          const cartData = session.metadata?.cartData;
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/transactions/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: cartData ? JSON.parse(cartData) : [],
+              total: session.amount_total,
+              paymentMethod: 'TWINT',
+              stripeIds: { checkoutSession: session.id, paymentIntent: session.payment_intent },
+            }),
+          }).catch(err => console.error('Transaction log failed:', err));
+
           // Trigger thermal print
           try {
             const cartData = session.metadata?.cartData;
@@ -108,6 +121,19 @@ export async function POST(request: NextRequest) {
           ticketName: ticket?.name,
           amount: paymentIntent.amount,
         });
+
+        // Log transaction locally
+        const cartData = paymentIntent.metadata?.cartData;
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/transactions/log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cartData ? JSON.parse(cartData) : [],
+            total: paymentIntent.amount,
+            paymentMethod: 'card',
+            stripeIds: { paymentIntent: paymentIntent.id },
+          }),
+        }).catch(err => console.error('Transaction log failed:', err));
 
         // In production, this would trigger the printer
         // The Terminal SDK will have already shown success on the device
