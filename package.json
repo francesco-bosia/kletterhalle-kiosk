@@ -11,7 +11,9 @@
   "dependencies": {
     "@stripe/stripe-js": "^8.7.0",
     "@stripe/terminal-js": "^0.26.0",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "node-thermal-printer": "^4.6.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "stripe": "^20.3.0"
