@@ -2,18 +2,16 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getTicketById, formatTicketPrice } from '@/lib/tickets';
+import { formatTicketPrice } from '@/lib/tickets';
 
 function SuccessPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const ticketId = searchParams.get('ticket');
+  const total = searchParams.get('total');
   const paymentIntent = searchParams.get('paymentIntent');
-  const sessionId = searchParams.get('session');
+  const session = searchParams.get('session');
 
   const [countdown, setCountdown] = useState(15);
-
-  const ticket = ticketId ? getTicketById(ticketId) : null;
 
   // Countdown timer for auto-redirect
   useEffect(() => {
@@ -67,12 +65,12 @@ function SuccessPageContent() {
       </header>
 
       {/* Receipt/ticket preview */}
-      {ticket && (
+      {total && (
         <main className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border-2 border-dashed border-gray-300">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-1">
-                Kletterhalle Ticket
+                Kletterhalle Quittung
               </h2>
               <p className="text-sm text-gray-500">
                 {new Date().toLocaleDateString('de-CH', {
@@ -86,14 +84,10 @@ function SuccessPageContent() {
             </div>
 
             <div className="border-t border-b border-gray-200 py-4 mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Ticket:</span>
-                <span className="font-semibold text-gray-900">{ticket.name}</span>
-              </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Betrag:</span>
+                <span className="text-gray-600">Gesamtbetrag:</span>
                 <span className="text-2xl font-bold text-blue-600">
-                  {formatTicketPrice(ticket.price)}
+                  {formatTicketPrice(parseFloat(total))}
                 </span>
               </div>
             </div>
