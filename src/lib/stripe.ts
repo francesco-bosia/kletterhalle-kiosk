@@ -1,0 +1,63 @@
+import Stripe from 'stripe';
+
+/**
+ * Initialize Stripe client with secret key from environment.
+ * Throws error if key is not configured.
+ */
+function getStripeClient(): Stripe {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+  }
+
+  // Check if using test key (starts with sk_test_)
+  const isTestMode = secretKey.startsWith('sk_test_');
+
+  return new Stripe(secretKey, {
+    apiVersion: '2026-01-28.clover' as const,
+    typescript: true,
+  });
+}
+
+/**
+ * Singleton Stripe client instance
+ */
+let stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    stripeInstance = getStripeClient();
+  }
+  return stripeInstance;
+}
+
+/**
+ * Get Stripe publishable key for client-side use.
+ * Throws error if key is not configured.
+ */
+export function getPublishableKey(): string {
+  const key = process.env.STRIPE_PUBLISHABLE_KEY;
+
+  if (!key) {
+    throw new Error('STRIPE_PUBLISHABLE_KEY environment variable is not set');
+  }
+
+  return key;
+}
+
+/**
+ * Calculate amount in cents from CHF value.
+ * e.g., 25.00 CHF -> 2500 cents
+ */
+export function toAmount(chf: number): number {
+  return Math.round(chf * 100);
+}
+
+/**
+ * Format amount in cents to CHF string.
+ * e.g., 2500 -> "CHF 25.00"
+ */
+export function formatChf(amount: number): string {
+  return `CHF ${(amount / 100).toFixed(2)}`;
+}
