@@ -156,6 +156,9 @@ export function printReceipt(data: ReceiptData): void {
  * - ESC d n : Feed n lines
  */
 
+// Thermal printer implementation
+export { printThermalReceipt, type PrintReceiptOptions } from './thermal-printer';
+
 /**
  * Example: Convert receipt text to ESC/POS commands
  *
