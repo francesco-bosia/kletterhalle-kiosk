@@ -1,38 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { getTicketById } from '@/lib/tickets';
 
-/**
- * POST /api/payments/create
- *
- * Creates a Stripe PaymentIntent for the selected ticket.
- * Supports both card payments (via Terminal) and TWINT.
- */
+interface CartItemRequest {
+  ticketId: string;
+  ticketName: string;
+  price: number;
+  quantity: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { ticketId, amount, paymentMethod } = body;
+    const { items, total, paymentMethod } = body;
 
     // Validate request
-    if (!ticketId || !amount || !paymentMethod) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: ticketId, amount, paymentMethod' },
+        { error: 'Cart is empty or invalid' },
         { status: 400 }
       );
     }
 
-    // Verify ticket exists and amount matches
-    const ticket = getTicketById(ticketId);
-    if (!ticket) {
+    if (!total || !paymentMethod) {
       return NextResponse.json(
-        { error: 'Invalid ticket ID' },
-        { status: 400 }
-      );
-    }
-
-    if (ticket.price !== amount) {
-      return NextResponse.json(
-        { error: 'Amount does not match ticket price' },
+        { error: 'Missing required fields: total, paymentMethod' },
         { status: 400 }
       );
     }
@@ -41,50 +32,44 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     if (paymentMethod === 'card') {
-      // For card payments - create PaymentIntent for Stripe Terminal
-      // The Terminal SDK will use this to process the payment on the reader
       const paymentIntent = await stripe.paymentIntents.create({
-        amount,
+        amount: total,
         currency: 'chf',
         payment_method_types: ['card_present'],
         capture_method: 'automatic',
         metadata: {
-          ticketId,
-          ticketName: ticket.name,
+          cartData: JSON.stringify(items),
+          itemCount: items.reduce((sum: number, item: CartItemRequest) => sum + item.quantity, 0).toString(),
         },
-        description: `Kletterhalle: ${ticket.name}`,
+        description: `Kletterhalle: ${items.length} ticket type(s)`,
       });
 
       return NextResponse.json({
         paymentIntentId: paymentIntent.id,
         clientSecret: paymentIntent.client_secret,
         amount: paymentIntent.amount,
+        cartItems: items,
       });
     }
 
     if (paymentMethod === 'twint') {
-      // For TWINT payments - use Stripe Checkout
       const checkoutSession = await stripe.checkout.sessions.create({
         payment_method_types: ['twint'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'chf',
-              product_data: {
-                name: ticket.name,
-                description: ticket.description,
-              },
-              unit_amount: amount,
+        line_items: items.map((item: CartItemRequest) => ({
+          price_data: {
+            currency: 'chf',
+            product_data: {
+              name: item.ticketName,
             },
-            quantity: 1,
+            unit_amount: item.price,
           },
-        ],
+          quantity: item.quantity,
+        })),
         mode: 'payment',
-        success_url: `${baseUrl}/success?ticket=${ticketId}&session={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/payment?ticket=${ticketId}`,
+        success_url: `${baseUrl}/success?total=${total}`,
+        cancel_url: `${baseUrl}/cart`,
         metadata: {
-          ticketId,
-          ticketName: ticket.name,
+          cartData: JSON.stringify(items),
         },
       });
 
@@ -102,11 +87,6 @@ export async function POST(request: NextRequest) {
     console.error('Error creating payment:', error);
     if (error instanceof Error) {
       console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    // Log Stripe-specific errors
-    if (error && typeof error === 'object' && 'type' in error) {
-      console.error('Stripe error:', JSON.stringify(error, null, 2));
     }
     return NextResponse.json(
       {

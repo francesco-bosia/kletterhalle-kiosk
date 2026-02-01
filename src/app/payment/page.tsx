@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { PaymentMethodSelector, PaymentMethod } from '@/components/payment-method-selector';
 import { TerminalProvider, useTerminal } from '@/components/terminal-provider';
-import { getTicketById, formatTicketPrice } from '@/lib/tickets';
+import { useCart } from '@/contexts/cart-context';
+import { formatTicketPrice } from '@/lib/tickets';
 
 function PaymentPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const ticketId = searchParams.get('ticket');
+  const { items, total, itemCount, clearCart } = useCart();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -18,16 +18,14 @@ function PaymentPageContent() {
 
   const { terminal, isSimulator, isConnected, error: terminalError } = useTerminal();
 
-  const ticket = ticketId ? getTicketById(ticketId) : null;
-
-  // Redirect to home if no ticket selected
+  // Redirect to home if cart is empty
   useEffect(() => {
-    if (!ticket) {
+    if (items.length === 0) {
       router.push('/');
     }
-  }, [ticket, router]);
+  }, [items, router]);
 
-  if (!ticket) {
+  if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
         <div className="text-2xl text-gray-600">Wird geladen...</div>
@@ -46,13 +44,21 @@ function PaymentPageContent() {
     setPaymentStatus(null);
 
     try {
+      // Prepare cart data for API
+      const cartItems = items.map(item => ({
+        ticketId: item.ticket.id,
+        ticketName: item.ticket.name,
+        price: item.ticket.price,
+        quantity: item.quantity,
+      }));
+
       // Create PaymentIntent via API
       const response = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ticketId: ticket.id,
-          amount: ticket.price,
+          items: cartItems,
+          total,
           paymentMethod: selectedMethod,
         }),
       });
@@ -95,7 +101,8 @@ function PaymentPageContent() {
 
         // Check payment result
         if (paymentIntent.status === 'succeeded') {
-          router.push(`/success?ticket=${ticket.id}&paymentIntent=${data.paymentIntentId}`);
+          clearCart();
+          router.push(`/success?total=${total}`);
         } else if (paymentIntent.status === 'canceled') {
           throw new Error('Zahlung abgebrochen');
         } else {
@@ -104,6 +111,7 @@ function PaymentPageContent() {
       } else {
         // For TWINT - redirect to Stripe Checkout
         if (data.checkoutUrl) {
+          clearCart();
           window.location.href = data.checkoutUrl;
         } else {
           throw new Error('No checkout URL returned');
@@ -117,12 +125,12 @@ function PaymentPageContent() {
   };
 
   const handleBack = () => {
-    router.push('/');
+    router.push('/cart');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-8">
-      {/* Header with ticket info */}
+      {/* Header with cart info */}
       <header className="mb-6 text-center">
         <div className="mb-4">
           <button
@@ -134,11 +142,24 @@ function PaymentPageContent() {
           </button>
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
-          {ticket.name}
+          Zahlung ({itemCount} {itemCount === 1 ? 'Ticket' : 'Tickets'})
         </h1>
         <p className="text-3xl font-semibold text-blue-600">
-          {formatTicketPrice(ticket.price)}
+          {formatTicketPrice(total)}
         </p>
+
+        {/* Cart Summary */}
+        <div className="mt-4 bg-white rounded-lg shadow-md p-4 max-w-md mx-auto">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Zusammenfassung</h3>
+          <ul className="space-y-1 text-sm text-gray-600">
+            {items.map(item => (
+              <li key={item.ticket.id} className="flex justify-between">
+                <span>{item.ticket.name} × {item.quantity}</span>
+                <span>{formatTicketPrice(item.ticket.price * item.quantity)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </header>
 
       {/* Terminal status indicator */}
