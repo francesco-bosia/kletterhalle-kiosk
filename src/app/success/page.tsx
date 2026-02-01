@@ -23,14 +23,50 @@ function SuccessPageContent() {
     }
   }, [countdown, router]);
 
+  // Auto-print receipt on mount
+  useEffect(() => {
+    async function printReceipt() {
+      try {
+        await fetch('/api/print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [], // Cart data would need to be passed via URL or state
+            total: total,
+            transactionId: paymentIntent,
+            paymentMethod: paymentIntent ? 'Karte' : 'TWINT',
+          }),
+        });
+      } catch (error) {
+        console.error('Auto-print failed:', error);
+        // Silent fail - user can manually print
+      }
+    }
+
+    printReceipt();
+  }, [total, paymentIntent]);
+
   const handleReturnHome = () => {
     router.push('/');
   };
 
-  const handlePrintReceipt = () => {
-    // For now, use browser print
-    // In production, this would call the thermal printer API
-    window.print();
+  const handlePrintReceipt = async () => {
+    try {
+      await fetch('/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [], // Cart data would need to be passed via URL or state
+          total: total,
+          transactionId: paymentIntent,
+          paymentMethod: paymentIntent ? 'Karte' : 'TWINT',
+        }),
+      });
+    } catch (error) {
+      console.error('Manual print failed:', error);
+      // Fallback to browser print if thermal printer fails
+      window.print();
+    }
   };
 
   return (

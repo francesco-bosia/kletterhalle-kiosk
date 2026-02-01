@@ -70,9 +70,25 @@ export async function POST(request: NextRequest) {
             amount: session.amount_total,
           });
 
-          // In production, this would trigger the printer
-          // For now, we just log the successful payment
-          // The user is redirected to the success page via Checkout
+          // Trigger thermal print
+          try {
+            const cartData = session.metadata?.cartData;
+            const items = cartData ? JSON.parse(cartData) : [];
+
+            await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                items,
+                total: session.amount_total,
+                transactionId: session.payment_intent,
+                paymentMethod: 'TWINT',
+              }),
+            });
+          } catch (printError) {
+            console.error('Webhook print failed:', printError);
+            // Don't fail webhook if print fails
+          }
         }
       }
     }
@@ -95,6 +111,26 @@ export async function POST(request: NextRequest) {
 
         // In production, this would trigger the printer
         // The Terminal SDK will have already shown success on the device
+      }
+
+      // Trigger thermal print
+      try {
+        const cartData = paymentIntent.metadata?.cartData;
+        const items = cartData ? JSON.parse(cartData) : [];
+
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items,
+            total: paymentIntent.amount,
+            transactionId: paymentIntent.id,
+            paymentMethod: 'Karte',
+          }),
+        });
+      } catch (printError) {
+        console.error('Webhook print failed:', printError);
+        // Don't fail webhook if print fails
       }
     }
 
