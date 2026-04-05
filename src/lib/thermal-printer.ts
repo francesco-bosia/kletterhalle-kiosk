@@ -11,7 +11,40 @@ export interface PrintReceiptOptions {
   paymentMethod: string;
 }
 
+const isTestMode = process.env.PRINTER_TEST_MODE === 'true';
+
 export async function printThermalReceipt(options: PrintReceiptOptions): Promise<void> {
+  // Test mode: Output to console instead of real printer
+  if (isTestMode) {
+    console.log('='.repeat(40));
+    console.log('🖨️  TEST MODE - Thermal Receipt Preview');
+    console.log('='.repeat(40));
+    console.log();
+    console.log('       KLETTERHALLE');
+    console.log('       ============');
+    console.log(new Date().toLocaleString('de-CH'));
+    console.log();
+
+    for (const item of options.items) {
+      console.log(`${item.name} x${item.quantity}`);
+      console.log(`${' '.repeat(20)}${formatChf(item.price * item.quantity)}`);
+    }
+
+    console.log();
+    console.log('-------------------');
+    console.log(`TOTAL${' '.repeat(15)}${formatChf(options.total)}`);
+    console.log();
+    console.log(`Bezahlt via: ${options.paymentMethod}`);
+    console.log(`Transaktion: ${options.transactionId.slice(0, 12)}...`);
+    console.log();
+    console.log('       Vielen Dank!');
+    console.log('       ============');
+    console.log();
+    console.log('='.repeat(40));
+    return;
+  }
+
+  // Production mode: Real thermal printer
   const printer = new ThermalPrinter({
     type: PrinterTypes.EPSON,
     interface: process.env.PRINTER_TYPE === 'network'

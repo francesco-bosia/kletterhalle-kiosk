@@ -4,6 +4,7 @@ import { useCart } from '@/contexts/cart-context';
 import { QuantitySelector } from '@/components/quantity-selector';
 import { useState } from 'react';
 import { TICKETS, formatTicketPrice, getTicketById } from '@/lib/tickets';
+import Link from 'next/link';
 
 export default function HomePage() {
   const { addItem, items, updateQuantity, total, itemCount } = useCart();
@@ -20,9 +21,12 @@ export default function HomePage() {
     if (!ticket) return;
 
     const currentQuantity = getQuantity(ticketId);
+    console.log('[HomePage] handleIncrease:', { ticketId, currentQuantity, ticket });
     if (currentQuantity === 0) {
+      console.log('[HomePage] Calling addItem');
       addItem(ticket);
     } else {
+      console.log('[HomePage] Calling updateQuantity');
       updateQuantity(ticketId, currentQuantity + 1);
     }
     setQuantities(prev => ({ ...prev, [ticketId]: (prev[ticketId] || 0) + 1 }));
@@ -90,12 +94,12 @@ export default function HomePage() {
                   {formatTicketPrice(total)}
                 </p>
               </div>
-              <a
+              <Link
                 href="/cart"
                 className="px-8 py-4 bg-blue-600 text-white text-xl font-semibold rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors"
               >
                 Zur Kasse
-              </a>
+              </Link>
             </div>
           </div>
         )}

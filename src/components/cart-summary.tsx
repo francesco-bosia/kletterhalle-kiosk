@@ -3,17 +3,20 @@
 import { useCart } from '@/contexts/cart-context';
 import { formatTicketPrice } from '@/lib/tickets';
 import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
 export function CartSummary() {
   const { items, total, itemCount, removeItem, updateQuantity } = useCart();
+
+  console.log('[CartSummary] Rendered with:', { items, itemCount, total });
 
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-xl text-gray-600">Ihr Warenkorb ist leer</p>
-        <a href="/" className="mt-4 inline-block text-blue-600 hover:underline">
+        <Link href="/" className="mt-4 inline-block text-blue-600 hover:underline">
           Zurück zur Ticketauswahl
-        </a>
+        </Link>
       </div>
     );
   }
@@ -61,21 +64,21 @@ export function CartSummary() {
               {formatTicketPrice(total)}
             </p>
           </div>
-          <a
+          <Link
             href="/payment"
             className="px-8 py-4 bg-blue-600 text-white text-xl font-semibold rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors"
           >
             Zur Kasse
-          </a>
+          </Link>
         </div>
       </div>
 
-      <a
+      <Link
         href="/"
         className="block text-center text-gray-600 hover:text-gray-800 transition-colors"
       >
         ← Zurück zur Ticketauswahl
-      </a>
+      </Link>
     </div>
   );
 }

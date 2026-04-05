@@ -1,9 +1,8 @@
 'use client';
 
 import { CartSummary } from '@/components/cart-summary';
-import { CartProvider } from '@/contexts/cart-context';
 
-function CartPageContent() {
+export default function CartPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
       <header className="mb-8 text-center">
@@ -15,13 +14,5 @@ function CartPageContent() {
         <CartSummary />
       </main>
     </div>
-  );
-}
-
-export default function CartPage() {
-  return (
-    <CartProvider>
-      <CartPageContent />
-    </CartProvider>
   );
 }
