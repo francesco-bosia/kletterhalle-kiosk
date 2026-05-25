@@ -3,19 +3,23 @@
 import { useWizard } from '@/lib/wizard-context';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
-import { t } from '@/lib/i18n';
 
 export function StepFooter() {
   const { state, dispatch } = useWizard();
-  const { step, cart, lang } = state;
+  const { step, cart } = state;
 
   const total = cartTotal(cart);
   const isContinueDisabled = step === 1 && total === 0;
 
-  function getButtonLabel(): string {
-    if (step === 3) return t('steps.payment', lang);
-    return t('chrome.continueLabel', lang);
-  }
+  // Bilingual button labels — Italian primary (top), English secondary (below)
+  const buttonLabels = {
+    1: { it: 'Continua', en: 'Continue' },
+    2: { it: 'Continua', en: 'Continue' },
+    3: { it: 'Pagamento', en: 'Payment' },
+    4: { it: 'Pagamento', en: 'Payment' },
+  };
+
+  const currentLabel = buttonLabels[step as keyof typeof buttonLabels];
 
   function handleContinue() {
     if (isContinueDisabled) return;
@@ -28,10 +32,11 @@ export function StepFooter() {
       <div className="flex items-center justify-between">
         {/* Running total */}
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-            Totale / Total
+          <span className="text-xs font-bold text-black uppercase tracking-wider">
+            Totale{' '}
+            <span className="italic font-normal text-gray-400">Total</span>
           </span>
-          <span className="text-2xl font-bold text-black">
+          <span className="text-4xl font-black tabular-nums text-black">
             {formatChf(total)}
           </span>
         </div>
@@ -40,13 +45,18 @@ export function StepFooter() {
         <button
           onClick={handleContinue}
           disabled={isContinueDisabled}
-          className={`rounded-xl px-8 py-3 text-base font-bold tracking-wide transition-colors ${
+          className={`rounded-2xl px-8 py-4 transition-colors flex flex-col items-center ${
             isContinueDisabled
-              ? 'cursor-not-allowed bg-gray-100 text-gray-300'
+              ? 'cursor-not-allowed bg-gray-100'
               : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
           }`}
         >
-          {getButtonLabel()}
+          <span className={`text-xl font-bold ${isContinueDisabled ? 'text-gray-300' : 'text-white'}`}>
+            {currentLabel.it}
+          </span>
+          <span className={`text-sm italic font-medium ${isContinueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
+            {currentLabel.en}
+          </span>
         </button>
       </div>
     </footer>
