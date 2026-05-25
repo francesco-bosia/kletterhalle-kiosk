@@ -1,0 +1,21 @@
+[Unit]
+Description=Kletterhalle Kiosk Browser
+Documentation=https://github.com/your-org/kletterhalle-kiosk
+After=graphical.target kletterhalle.service
+Requires=kletterhalle.service
+
+[Service]
+Type=simple
+User=pi
+Environment=DISPLAY=:0
+ExecStart=/home/pi/kiosk/kiosk.sh
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kiosk-browser
+
+[Install]
+WantedBy=graphical.target

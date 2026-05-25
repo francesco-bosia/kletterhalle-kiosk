@@ -1,0 +1,25 @@
+[Unit]
+Description=Kletterhalle Next.js App
+Documentation=https://github.com/your-org/kletterhalle-kiosk
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/kletterhalle-kiosk
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kletterhalle
+
+# Security (optional, uncomment for production)
+# NoNewPrivileges=true
+# PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
