@@ -24,7 +24,7 @@ export function WizardChrome() {
         {(state.step === 4 || state.phase === 'success') && <Step4Payment />}
       </main>
 
-      {state.phase !== 'success' && <StepFooter />}
+      {state.step !== 4 && state.phase !== 'success' && <StepFooter />}
 
       <IdleWatcher />
     </DeviceFrame>

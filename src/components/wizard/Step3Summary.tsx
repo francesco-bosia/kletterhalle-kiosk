@@ -3,9 +3,8 @@
 import { useWizard } from '@/lib/wizard-context';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
-import { hasDailyPass, hasShowerOnly } from '@/lib/cart-rules';
+import { hasDailyPass, hasShower } from '@/lib/cart-rules';
 import { StepTitle } from '@/components/wizard/StepTitle';
-import type { CartLine } from '@/lib/cart';
 
 export function Step3Summary() {
   const { state } = useWizard();
@@ -13,7 +12,7 @@ export function Step3Summary() {
 
   const activeItems = cart.filter((l) => l.quantity > 0);
   const total = cartTotal(cart);
-  const showShowerHint = hasDailyPass(cart) && !hasShowerOnly(cart);
+  const showShowerHint = hasDailyPass(cart) && !hasShower(cart);
 
   return (
     <div className="flex flex-col gap-4">

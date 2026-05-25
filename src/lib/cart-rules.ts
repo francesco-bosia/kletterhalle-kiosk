@@ -18,9 +18,9 @@ export function hasDailyPass(cart: CartLine[]): boolean {
 }
 
 /**
- * Returns true if the cart contains only the standalone shower product.
- * Used to differentiate "shower only" from "shower included with daily pass".
+ * Returns true if the cart contains a shower product.
+ * Used to check if shower add-on is already in cart.
  */
-export function hasShowerOnly(cart: CartLine[]): boolean {
+export function hasShower(cart: CartLine[]): boolean {
   return cart.some((l) => l.quantity > 0 && l.productId === SHOWER_ID);
 }
