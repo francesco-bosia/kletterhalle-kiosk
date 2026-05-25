@@ -5,11 +5,14 @@
 
 /**
  * Format cents as a CHF string.
- * @example formatChf(1600) // => "CHF 16.00"
- * @example formatChf(0)    // => "CHF 0.00"
+ * Drops trailing .00 from whole franc amounts.
+ * @example formatChf(1600) // => "CHF 16"
+ * @example formatChf(1650) // => "CHF 16.50"
+ * @example formatChf(0)    // => "CHF 0"
  */
 export function formatChf(cents: number): string {
-  return `CHF ${(cents / 100).toFixed(2)}`;
+  const whole = cents % 100 === 0;
+  return whole ? `CHF ${cents / 100}` : `CHF ${(cents / 100).toFixed(2)}`;
 }
 
 /**
