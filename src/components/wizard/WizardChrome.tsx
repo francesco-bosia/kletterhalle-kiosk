@@ -1,6 +1,7 @@
 'use client';
 
 import { useWizard } from '@/lib/wizard-context';
+import { DeviceFrame } from '@/components/wizard/DeviceFrame';
 import { StepHeader } from '@/components/wizard/StepHeader';
 import { StepFooter } from '@/components/wizard/StepFooter';
 import { Step1Tickets } from '@/components/wizard/Step1Tickets';
@@ -13,10 +14,10 @@ export function WizardChrome() {
   const { state } = useWizard();
 
   return (
-    <div className="wizard-root flex h-screen flex-col bg-white">
+    <DeviceFrame>
       <StepHeader />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto px-5 py-2">
         {state.step === 1 && <Step1Tickets />}
         {state.step === 2 && <Step2Shoes />}
         {state.step === 3 && <Step3Summary />}
@@ -26,6 +27,6 @@ export function WizardChrome() {
       {state.phase !== 'success' && <StepFooter />}
 
       <IdleWatcher />
-    </div>
+    </DeviceFrame>
   );
 }
