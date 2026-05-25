@@ -1,12 +1,19 @@
 'use client';
 
+import { useReducer } from 'react';
+import { wizardReducer, createInitialState } from '@/lib/wizard';
+import { WizardReactContext } from '@/lib/wizard-context';
+import { TerminalProvider } from '@/components/terminal-provider';
+import { WizardChrome } from '@/components/wizard/WizardChrome';
+
 export default function WizardRoot() {
+  const [state, dispatch] = useReducer(wizardReducer, createInitialState());
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
-      <header className="text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-4">Splüia Kiosk</h1>
-        <p className="text-xl text-gray-600">Loading wizard...</p>
-      </header>
-    </div>
+    <WizardReactContext.Provider value={{ state, dispatch }}>
+      <TerminalProvider>
+        <WizardChrome />
+      </TerminalProvider>
+    </WizardReactContext.Provider>
   );
 }
