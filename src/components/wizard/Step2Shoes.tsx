@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { getGroupsForStep } from '@/lib/catalog';
 import { formatChf } from '@/lib/money';
+import { StepTitle } from '@/components/wizard/StepTitle';
 import { QuantityControl } from '@/components/wizard/QuantityControl';
 
 export function Step2Shoes() {
@@ -27,38 +28,59 @@ export function Step2Shoes() {
     state.cart.find((l) => l.productId === product.id)?.quantity ?? 0;
 
   return (
-    <div className="flex flex-col items-center gap-6 px-5 py-2">
-      {/* Title section */}
-      <div className="mb-2 text-center">
-        <h1 className="text-2xl font-bold text-black">
-          {state.lang === 'it' ? 'Vuoi noleggiare le scarpette?' : 'Need climbing shoes?'}
-        </h1>
-        <p className="mt-1 text-sm text-gray-400 italic">
-          {state.lang === 'en' ? 'Vuoi noleggiare le scarpette?' : 'Need climbing shoes?'}
-        </p>
-        <p className="mt-3 text-sm text-gray-400">
-          Aggiungi il numero di paia necessarie.
-          <br />
-          Add the number of pairs you need.
-        </p>
-      </div>
+    <div>
+      <StepTitle
+        it="Vuoi noleggiare le scarpette?"
+        en="Need climbing shoes?"
+        descriptionIt="Aggiungi il numero di paia necessarie."
+        descriptionEn="Add the number of pairs you need."
+      />
 
       {/* Single product card */}
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex flex-col items-center text-center">
-            <span className="text-xl font-bold text-black">
-              {product.label.it}
-            </span>
-            <span className="mt-0.5 text-sm text-gray-400">
-              {product.label.en}
-            </span>
-          </div>
-
-          <span className="text-2xl font-bold tabular-nums text-black">
-            {formatChf(product.priceCents)}
+      <div className="w-full max-w-sm mx-auto bg-gray-100 rounded-3xl p-6">
+        {/* Header */}
+        <div className="flex items-baseline justify-between mb-6">
+          <h3 className="text-sm font-extrabold tracking-[0.2em] text-black">
+            NOLEGGIO
+          </h3>
+          <span className="text-sm italic text-gray-400">
+            Rental
           </span>
+        </div>
 
+        {/* Product name */}
+        <div className="text-center mb-4">
+          <h2 className="text-4xl font-black text-black">
+            {product.label.it}
+          </h2>
+          <p className="text-lg italic text-gray-400 mt-1">
+            {product.label.en}
+          </p>
+        </div>
+
+        {/* Price */}
+        <div className="text-center mb-6">
+          <p className="text-3xl font-black text-black">
+            {formatChf(product.priceCents)}
+          </p>
+          <p className="text-sm text-gray-500">
+            per paio / per pair
+          </p>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-gray-200 mb-6" />
+
+        {/* Quantity selector */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-bold text-black">
+              Quanti?
+            </p>
+            <p className="text-sm italic text-gray-400">
+              How many?
+            </p>
+          </div>
           <QuantityControl
             quantity={quantity}
             onInc={() =>
@@ -85,7 +107,7 @@ export function Step2Shoes() {
       <button
         type="button"
         onClick={handleSkip}
-        className="text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
+        className="mt-6 w-full text-center text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
       >
         No grazie, salta questo passo
         <br />
