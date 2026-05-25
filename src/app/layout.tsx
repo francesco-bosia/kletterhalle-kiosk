@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from "@/contexts/cart-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kletterhalle Kiosk",
-  description: "Self-service ticket kiosk for bouldering hall",
+  title: "Splüia",
+  description: "Self-service ticket kiosk",
 };
 
 export default function RootLayout({
@@ -19,11 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
-      <body
-        className={`${inter.variable} antialiased`}
-      >
-        <CartProvider>{children}</CartProvider>
+    <html lang="it">
+      <body className={`${inter.variable} antialiased`}>
+        {children}
       </body>
     </html>
   );
