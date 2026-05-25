@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWizard } from '@/lib/wizard-context';
-import { t } from '@/lib/i18n';
 
 const COUNTDOWN_SECONDS = 10;
 
 export function Step4Success() {
   const { state, dispatch } = useWizard();
-  const { lang, payment } = state;
+  const { payment } = state;
   const [remaining, setRemaining] = useState(COUNTDOWN_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -25,12 +24,10 @@ export function Step4Success() {
     timerRef.current = setInterval(() => {
       setRemaining((prev) => {
         if (prev <= 1) {
-          // Timer expired — reset session
           if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
           }
-          // Use a microtask to avoid dispatch during render
           queueMicrotask(() => dispatch({ type: 'RESET_SESSION' }));
           return 0;
         }
@@ -68,39 +65,32 @@ export function Step4Success() {
       {/* Heading */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">
-          {t('success.title', lang)}
+          Pagamento riuscito!
         </h2>
         <p className="mt-1 text-base text-gray-600">
-          {t('success.thankYou', lang)}
+          Grazie e buona arrampicata!
         </p>
       </div>
 
       {/* Transaction ID */}
       {payment.transactionId && (
         <p className="text-sm text-gray-500">
-          {lang === 'it' ? 'ID transazione' : 'Transaction ID'}: {payment.transactionId}
+          ID transazione: {payment.transactionId}
         </p>
       )}
 
-      {/* Receipt notice */}
-      <p className="text-sm text-gray-500">
-        {t('success.receipt', lang)}
-      </p>
-
-      {/* Countdown */}
-      <p className="text-lg text-gray-700">
-        {lang === 'it'
-          ? `Nuovo cliente fra ${remaining}s`
-          : `New customer in ${remaining}s`}
-      </p>
-
-      {/* Manual reset button */}
+      {/* Restart button */}
       <button
         onClick={resetSession}
-        className="rounded-xl bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800"
+        className="rounded-xl bg-black px-8 py-3 text-base font-bold text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
       >
-        {t('success.newSession', lang)}
+        Nuova sessione
       </button>
+
+      {/* Countdown hint */}
+      <p className="text-xs text-gray-400">
+        Ripartimento automatico tra {remaining} secondi
+      </p>
     </div>
   );
 }
