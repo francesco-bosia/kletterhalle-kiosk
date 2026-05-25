@@ -10,16 +10,18 @@ interface ProductGroupHeaderProps {
 
 export function ProductGroupHeader({ group, lang }: ProductGroupHeaderProps) {
   return (
-    <div className="mb-3 mt-6 first:mt-0">
-      <h2 className="text-lg font-bold text-gray-900">
-        {group.label.it}
-        <span className="ml-2 font-normal text-gray-500">
+    <div className="mb-3 mt-8 first:mt-0">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-sm font-bold tracking-widest text-black">
+          {group.label.it.toUpperCase()}
+        </h2>
+        <span className="text-sm text-gray-400">
           {group.label.en}
         </span>
-      </h2>
+      </div>
       {group.note && (
-        <p className="mt-0.5 text-sm text-gray-500">
-          {group.note[lang]}
+        <p className="mt-1 text-xs text-gray-400 italic">
+          {group.note.it} / {group.note.en}
         </p>
       )}
     </div>

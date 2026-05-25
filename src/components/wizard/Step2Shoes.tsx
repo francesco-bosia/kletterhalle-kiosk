@@ -14,7 +14,6 @@ export function Step2Shoes() {
 
   const handleSkip = useCallback(() => {
     if (!product) return;
-    // Clear shoes from cart if present, then advance
     const existing = state.cart.find((l) => l.productId === product.id);
     if (existing) {
       dispatch({ type: 'SET', productId: product.id, quantity: 0 });
@@ -28,26 +27,38 @@ export function Step2Shoes() {
     state.cart.find((l) => l.productId === product.id)?.quantity ?? 0;
 
   return (
-    <div className="flex flex-col items-center gap-6 px-4 py-6">
+    <div className="flex flex-col items-center gap-6 px-5 py-2">
+      {/* Title section */}
+      <div className="mb-2 text-center">
+        <h1 className="text-2xl font-bold text-black">
+          {state.lang === 'it' ? 'Vuoi noleggiare le scarpette?' : 'Need climbing shoes?'}
+        </h1>
+        <p className="mt-1 text-sm text-gray-400 italic">
+          {state.lang === 'en' ? 'Vuoi noleggiare le scarpette?' : 'Need climbing shoes?'}
+        </p>
+        <p className="mt-3 text-sm text-gray-400">
+          Aggiungi il numero di paia necessarie.
+          <br />
+          Add the number of pairs you need.
+        </p>
+      </div>
+
       {/* Single product card */}
-      <div className="w-full max-w-md rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex flex-col items-center gap-4">
-          {/* Labels */}
           <div className="flex flex-col items-center text-center">
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-xl font-bold text-black">
               {product.label.it}
             </span>
-            <span className="mt-0.5 text-base text-gray-500">
+            <span className="mt-0.5 text-sm text-gray-400">
               {product.label.en}
             </span>
           </div>
 
-          {/* Price */}
-          <span className="text-2xl font-bold tabular-nums text-gray-900">
+          <span className="text-2xl font-bold tabular-nums text-black">
             {formatChf(product.priceCents)}
           </span>
 
-          {/* Quantity control */}
           <QuantityControl
             quantity={quantity}
             onInc={() =>
@@ -74,11 +85,11 @@ export function Step2Shoes() {
       <button
         type="button"
         onClick={handleSkip}
-        className="text-base text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600 hover:decoration-gray-500"
+        className="text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
       >
         No grazie, salta questo passo
         <br />
-        <span className="text-sm">No thanks, skip this step</span>
+        <span className="text-xs">No thanks, skip this step</span>
       </button>
     </div>
   );

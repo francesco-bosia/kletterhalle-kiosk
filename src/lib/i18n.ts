@@ -6,7 +6,7 @@ export type Lang = 'it' | 'en';
 
 const MESSAGES = {
   chrome: {
-    stepLabel: { it: 'PASSO', en: 'STEP' },
+    stepLabel: { it: 'STEP', en: 'STEP' },
     continueLabel: { it: 'Continua', en: 'Continue' },
     backLabel: { it: 'Indietro', en: 'Back' },
     cancelLabel: { it: 'Annulla', en: 'Cancel' },
@@ -18,6 +18,42 @@ const MESSAGES = {
     extras: { it: 'Extra', en: 'Extras' },
     summary: { it: 'Riepilogo', en: 'Summary' },
     payment: { it: 'Pagamento', en: 'Payment' },
+  },
+  stepTitles: {
+    1: {
+      it: 'Scegli i biglietti',
+      en: 'Choose your tickets',
+    },
+    2: {
+      it: 'Vuoi noleggiare le scarpette?',
+      en: 'Need climbing shoes?',
+    },
+    3: {
+      it: 'Riepilogo',
+      en: 'Summary',
+    },
+    4: {
+      it: 'Pagamento',
+      en: 'Payment',
+    },
+  },
+  stepSubtitles: {
+    1: {
+      it: 'Puoi acquistare più biglietti contemporaneamente.',
+      en: 'You can purchase several tickets at once.',
+    },
+    2: {
+      it: 'Aggiungi il numero di paia necessarie.',
+      en: 'Add the number of pairs you need.',
+    },
+    3: {
+      it: 'Controlla il tuo ordine prima di procedere.',
+      en: 'Review your order before proceeding.',
+    },
+    4: {
+      it: 'Scegli il metodo di pagamento.',
+      en: 'Choose your payment method.',
+    },
   },
   payment: {
     chooseMethod: { it: 'Scegli il metodo di pagamento', en: 'Choose payment method' },

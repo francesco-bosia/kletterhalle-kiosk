@@ -5,13 +5,8 @@ import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
 import type { CartLine } from '@/lib/cart';
 
-/** Product IDs that count as daily passes */
 const DAILY_PASS_IDS = ['adult', 'student', 'teen', 'child', 'family'];
-
-/** Group ID for the daily pass group */
 const DAILY_GROUP_ID = 'daily';
-
-/** Product ID for shower-only */
 const SHOWER_ID = 'shower';
 
 function hasDailyPass(cart: CartLine[]): boolean {
@@ -23,9 +18,7 @@ function hasDailyPass(cart: CartLine[]): boolean {
 }
 
 function hasShowerOnly(cart: CartLine[]): boolean {
-  return cart.some(
-    (l) => l.quantity > 0 && l.productId === SHOWER_ID
-  );
+  return cart.some((l) => l.quantity > 0 && l.productId === SHOWER_ID);
 }
 
 export function Step3Summary() {
@@ -37,25 +30,35 @@ export function Step3Summary() {
   const showShowerHint = hasDailyPass(cart) && !hasShowerOnly(cart);
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="flex flex-col gap-4 px-5 py-2">
+      {/* Title section */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold text-black">
+          {lang === 'it' ? 'Riepilogo' : 'Summary'}
+        </h1>
+        <p className="mt-1 text-sm text-gray-400 italic">
+          {lang === 'en' ? 'Riepilogo' : 'Summary'}
+        </p>
+        <p className="mt-3 text-sm text-gray-400 text-center">
+          Controlla il tuo ordine prima di procedere.
+          <br />
+          Review your order before proceeding.
+        </p>
+      </div>
+
       {/* Line items */}
-      <div className="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100">
+      <div className="rounded-2xl border border-gray-200 divide-y divide-gray-100">
         {activeItems.map((line) => (
           <div
             key={line.productId}
             className="flex items-center justify-between px-4 py-3"
           >
-            {/* Product name */}
-            <span className="text-base text-gray-900">
+            <span className="text-base font-medium text-black">
               {lang === 'it' ? line.labelIt : line.labelEn}
             </span>
-
-            {/* Quantity + line total */}
             <div className="flex items-baseline gap-3">
-              <span className="text-sm text-gray-500">
-                x{line.quantity}
-              </span>
-              <span className="text-base font-semibold tabular-nums text-gray-900">
+              <span className="text-sm text-gray-400">x{line.quantity}</span>
+              <span className="text-base font-bold tabular-nums text-black">
                 {formatChf(line.priceCents * line.quantity)}
               </span>
             </div>
@@ -63,11 +66,11 @@ export function Step3Summary() {
         ))}
 
         {/* Grand total */}
-        <div className="flex items-center justify-between px-4 py-4 bg-gray-50 rounded-b-2xl">
-          <span className="text-lg font-bold text-gray-900">
+        <div className="flex items-center justify-between px-4 py-4 bg-black rounded-b-2xl">
+          <span className="text-base font-bold text-white">
             Totale / Total
           </span>
-          <span className="text-2xl font-bold tabular-nums text-gray-900">
+          <span className="text-2xl font-bold tabular-nums text-white">
             {formatChf(total)}
           </span>
         </div>
@@ -75,11 +78,11 @@ export function Step3Summary() {
 
       {/* Shower included hint */}
       {showShowerHint && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm text-blue-800">
+        <div className="rounded-xl border border-gray-200 px-4 py-3">
+          <p className="text-sm text-gray-500">
             La doccia è inclusa con la giornaliera
             <br />
-            <span className="text-blue-600">
+            <span className="text-gray-400">
               Shower is included with your daily pass
             </span>
           </p>
@@ -87,8 +90,8 @@ export function Step3Summary() {
       )}
 
       {/* Payment notice */}
-      <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-        <p className="text-sm text-gray-600">
+      <div className="rounded-xl border border-gray-200 px-4 py-3">
+        <p className="text-sm text-gray-500">
           Pagamento con TWINT, carta di credito o carta prepagata
           <br />
           <span className="text-gray-400">

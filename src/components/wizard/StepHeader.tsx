@@ -7,7 +7,6 @@ export function StepHeader() {
   const { state, dispatch } = useWizard();
   const { step, lang } = state;
 
-  const stepLabel = t('chrome.stepLabel', lang);
   const isBackDisabled = step === 1;
 
   function handleBack() {
@@ -21,26 +20,26 @@ export function StepHeader() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+    <header className="flex items-center justify-between px-5 py-3">
       {/* Step pill — tappable to go back */}
       <button
         onClick={handleBack}
         disabled={isBackDisabled}
-        className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+        className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold tracking-wide transition-colors ${
           isBackDisabled
-            ? 'cursor-default bg-gray-100 text-gray-400'
-            : 'cursor-pointer bg-blue-100 text-blue-700 hover:bg-blue-200 active:bg-blue-300'
+            ? 'bg-black text-white'
+            : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
         }`}
       >
-        {stepLabel} {step} / 4
+        STEP {step} / 4
       </button>
 
       {/* Language toggle */}
       <button
         onClick={handleToggleLang}
-        className="rounded-full border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 active:bg-gray-200"
+        className="text-sm font-medium text-gray-400 transition-colors hover:text-gray-600"
       >
-        {lang === 'it' ? 'IT | EN' : 'EN | IT'}
+        IT&nbsp;/&nbsp;EN
       </button>
     </header>
   );

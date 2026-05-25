@@ -5,12 +5,7 @@ import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
 import { t } from '@/lib/i18n';
 
-interface StepFooterProps {
-  /** Override the continue button label (rarely needed) */
-  continueLabel?: string;
-}
-
-export function StepFooter({ continueLabel }: StepFooterProps) {
+export function StepFooter() {
   const { state, dispatch } = useWizard();
   const { step, cart, lang } = state;
 
@@ -18,10 +13,7 @@ export function StepFooter({ continueLabel }: StepFooterProps) {
   const isContinueDisabled = step === 1 && total === 0;
 
   function getButtonLabel(): string {
-    if (continueLabel) return continueLabel;
-    if (step === 3) {
-      return t('steps.payment', lang);
-    }
+    if (step === 3) return t('steps.payment', lang);
     return t('chrome.continueLabel', lang);
   }
 
@@ -32,14 +24,14 @@ export function StepFooter({ continueLabel }: StepFooterProps) {
   }
 
   return (
-    <footer className="sticky bottom-0 border-t border-gray-200 bg-white px-4 py-3">
+    <footer className="sticky bottom-0 bg-white px-5 py-4">
       <div className="flex items-center justify-between">
         {/* Running total */}
         <div className="flex flex-col">
-          <span className="text-xs text-gray-500 uppercase tracking-wide">
-            {t('cart.total', lang)}
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            Totale / Total
           </span>
-          <span className="text-lg font-bold text-gray-900">
+          <span className="text-2xl font-bold text-black">
             {formatChf(total)}
           </span>
         </div>
@@ -48,10 +40,10 @@ export function StepFooter({ continueLabel }: StepFooterProps) {
         <button
           onClick={handleContinue}
           disabled={isContinueDisabled}
-          className={`rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
+          className={`rounded-xl px-8 py-3 text-base font-bold tracking-wide transition-colors ${
             isContinueDisabled
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+              ? 'cursor-not-allowed bg-gray-100 text-gray-300'
+              : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
           }`}
         >
           {getButtonLabel()}
