@@ -32,7 +32,7 @@ export function Step1Tickets() {
 
       {groups.map((group) => (
         <div key={group.id}>
-          <ProductGroupHeader group={group} lang={state.lang} />
+          <ProductGroupHeader group={group} />
           {group.products.map((product) => {
             const quantity =
               state.cart.find((l) => l.productId === product.id)?.quantity ?? 0;
