@@ -33,6 +33,7 @@ const MESSAGES = {
       it: 'La sessione scadrà tra poco. Tocca lo schermo per continuare.',
       en: 'The session will expire soon. Tap the screen to continue.',
     },
+    confirm: { it: "Sì, continuo", en: "Yes, I'm still here" },
     expireWarning: { it: 'Sessione scaduta', en: 'Session expired' },
   },
   success: {
