@@ -32,6 +32,7 @@ export type WizardAction =
   | { type: 'PAYMENT_STARTED'; paymentIntentId: string; clientSecret: string }
   | { type: 'PAYMENT_SUCCEEDED'; transactionId: string }
   | { type: 'PAYMENT_FAILED'; error: string }
+  | { type: 'RETRY_PAYMENT' }
   | { type: 'RESET_SESSION' };
 
 // ── Initial state factory ──────────────────────────────────────────────────────
@@ -115,6 +116,22 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
         payment: {
           ...state.payment,
           error: action.error,
+        },
+      };
+
+    case 'RETRY_PAYMENT':
+      return {
+        ...state,
+        phase: 'shopping',
+        step: 4,
+        payment: {
+          ...state.payment,
+          method: null,
+          paymentIntentId: null,
+          clientSecret: null,
+          transactionId: null,
+          statusMessage: null,
+          error: null,
         },
       };
 
