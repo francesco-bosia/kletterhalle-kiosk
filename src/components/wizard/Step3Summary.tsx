@@ -3,23 +3,9 @@
 import { useWizard } from '@/lib/wizard-context';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
+import { hasDailyPass, hasShowerOnly } from '@/lib/cart-rules';
+import { StepTitle } from '@/components/wizard/StepTitle';
 import type { CartLine } from '@/lib/cart';
-
-const DAILY_PASS_IDS = ['adult', 'student', 'teen', 'child', 'family'];
-const DAILY_GROUP_ID = 'daily';
-const SHOWER_ID = 'shower';
-
-function hasDailyPass(cart: CartLine[]): boolean {
-  return cart.some(
-    (l) =>
-      l.quantity > 0 &&
-      (DAILY_PASS_IDS.includes(l.productId) || l.groupId === DAILY_GROUP_ID)
-  );
-}
-
-function hasShowerOnly(cart: CartLine[]): boolean {
-  return cart.some((l) => l.quantity > 0 && l.productId === SHOWER_ID);
-}
 
 export function Step3Summary() {
   const { state } = useWizard();
@@ -30,21 +16,13 @@ export function Step3Summary() {
   const showShowerHint = hasDailyPass(cart) && !hasShowerOnly(cart);
 
   return (
-    <div className="flex flex-col gap-4 px-5 py-2">
-      {/* Title section */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold text-black">
-          {lang === 'it' ? 'Riepilogo' : 'Summary'}
-        </h1>
-        <p className="mt-1 text-sm text-gray-400 italic">
-          {lang === 'en' ? 'Riepilogo' : 'Summary'}
-        </p>
-        <p className="mt-3 text-sm text-gray-400 text-center">
-          Controlla il tuo ordine prima di procedere.
-          <br />
-          Review your order before proceeding.
-        </p>
-      </div>
+    <div className="flex flex-col gap-4">
+      <StepTitle
+        it="Riepilogo"
+        en="Summary"
+        descriptionIt="Controlla il tuo ordine prima di procedere."
+        descriptionEn="Review your order before proceeding."
+      />
 
       {/* Line items */}
       <div className="rounded-2xl border border-gray-200 divide-y divide-gray-100">
