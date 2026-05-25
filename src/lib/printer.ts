@@ -40,7 +40,7 @@ export function formatReceiptPrice(cents: number): string {
  * Format date for receipt
  */
 export function formatReceiptDate(date: Date): string {
-  return date.toLocaleDateString('de-CH', {
+  return date.toLocaleDateString('it-CH', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -58,7 +58,7 @@ export function generateReceiptText(data: ReceiptData): string {
 
   // Header
   lines.push('================================');
-  lines.push('       KLETTERHALLE');
+  lines.push('         SPLÜIA');
   lines.push('================================');
   lines.push('');
 
@@ -88,7 +88,7 @@ export function generateReceiptText(data: ReceiptData): string {
 
   // Footer
   lines.push('================================');
-  lines.push('     Vielen Dank!');
+  lines.push('         Grazie!');
   lines.push('================================');
   lines.push('');
   lines.push('');

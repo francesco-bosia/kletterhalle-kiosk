@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
 
       if (session.payment_status === 'paid') {
         const ticketId = session.metadata?.ticketId;
+        const lang = session.metadata?.lang || 'it';
 
         if (ticketId) {
           const ticket = getTicketById(ticketId);
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
                 total: session.amount_total,
                 transactionId: session.payment_intent,
                 paymentMethod: 'TWINT',
+                lang,
               }),
             });
           } catch (printError) {
@@ -111,6 +113,8 @@ export async function POST(request: NextRequest) {
       const paymentIntent = event.data.object as any;
 
       const ticketId = paymentIntent.metadata?.ticketId;
+      const lang = paymentIntent.metadata?.lang || 'it';
+      const localizedPaymentMethod = lang === 'it' ? 'Carta' : 'Card';
 
       if (ticketId) {
         const ticket = getTicketById(ticketId);
@@ -151,7 +155,8 @@ export async function POST(request: NextRequest) {
             items,
             total: paymentIntent.amount,
             transactionId: paymentIntent.id,
-            paymentMethod: 'Karte',
+            paymentMethod: localizedPaymentMethod,
+            lang,
           }),
         });
       } catch (printError) {

@@ -1,38 +1,33 @@
-/**
- * Temporary shim — preserves the public API consumed by the Stripe webhook.
- * Will be replaced in Phase 2 with the proper Splüia ticket catalogue.
- */
+import { CATALOG, getProductById } from './catalog';
 
 export interface Ticket {
   id: string;
   name: string;
-  price: number; // cents (CHF)
+  price: number;
   description: string;
 }
 
-export const TICKETS: Ticket[] = [
-  {
-    id: 'adult-day',
-    name: 'Tageskarte Erwachsene',
-    price: 2500,
-    description: 'Ganzjähriger Zugang, 1 Tag gültig',
-  },
-  {
-    id: 'child-day',
-    name: 'Tageskarte Kind',
-    price: 1500,
-    description: 'Bis 16 Jahre, 1 Tag gültig',
-  },
-  {
-    id: 'student-day',
-    name: 'Tageskarte Student',
-    price: 2000,
-    description: 'Mit gültigem Ausweis, 1 Tag gültig',
-  },
-];
+// Convert catalog products to legacy ticket format for webhook compatibility
+export const TICKETS: Ticket[] = CATALOG.groups.flatMap(g =>
+  g.products
+    .filter(p => !p.isFree)
+    .map(p => ({
+      id: p.id,
+      name: p.label.it,
+      price: p.priceCents,
+      description: p.sublabel?.it || p.label.en,
+    }))
+);
 
 export function getTicketById(id: string): Ticket | undefined {
-  return TICKETS.find((ticket) => ticket.id === id);
+  const product = getProductById(id);
+  if (!product) return undefined;
+  return {
+    id: product.id,
+    name: product.label.it,
+    price: product.priceCents || 0,
+    description: product.sublabel?.it || product.label.en,
+  };
 }
 
 export function formatTicketPrice(price: number): string {

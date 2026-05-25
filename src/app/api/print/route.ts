@@ -4,7 +4,7 @@ import { printThermalReceipt } from '@/lib/printer';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, total, transactionId, paymentMethod } = body;
+    const { items, total, transactionId, paymentMethod, lang } = body;
 
     // Validate request
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       total,
       transactionId,
       paymentMethod,
+      lang: lang || 'it',
     });
 
     return NextResponse.json({ success: true });

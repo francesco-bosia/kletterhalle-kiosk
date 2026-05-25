@@ -11,7 +11,7 @@ interface CartItemRequest {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, total, paymentMethod } = body;
+    const { items, total, paymentMethod, lang } = body;
 
     // Validate request
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
         metadata: {
           cartData: JSON.stringify(items),
           itemCount: items.reduce((sum: number, item: CartItemRequest) => sum + item.quantity, 0).toString(),
+          lang: lang || 'it',
         },
-        description: `Kletterhalle: ${items.length} ticket type(s)`,
+        description: `Splüia: ${items.length} ticket type(s)`,
       });
 
       return NextResponse.json({
@@ -67,9 +68,10 @@ export async function POST(request: NextRequest) {
         })),
         mode: 'payment',
         success_url: `${baseUrl}/success?total=${total}`,
-        cancel_url: `${baseUrl}/cart`,
+        cancel_url: `${baseUrl}/`,
         metadata: {
           cartData: JSON.stringify(items),
+          lang: lang || 'it',
         },
       });
 

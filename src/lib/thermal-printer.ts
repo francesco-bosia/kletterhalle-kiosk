@@ -9,20 +9,31 @@ export interface PrintReceiptOptions {
   total: number;
   transactionId: string;
   paymentMethod: string;
+  lang?: 'it' | 'en';
 }
 
 const isTestMode = process.env.PRINTER_TEST_MODE === 'true';
 
 export async function printThermalReceipt(options: PrintReceiptOptions): Promise<void> {
+  const lang = options.lang || 'it';
+
+  const strings = {
+    header: 'SPLÜIA',
+    paidWith: lang === 'it' ? 'Pagato con:' : 'Paid with:',
+    transaction: lang === 'it' ? 'Transazione:' : 'Transaction:',
+    thankYou: lang === 'it' ? 'Grazie!' : 'Thank you!',
+    total: lang === 'it' ? 'TOTALE' : 'TOTAL',
+  };
+
   // Test mode: Output to console instead of real printer
   if (isTestMode) {
     console.log('='.repeat(40));
-    console.log('🖨️  TEST MODE - Thermal Receipt Preview');
+    console.log('TEST MODE - Thermal Receipt Preview');
     console.log('='.repeat(40));
     console.log();
-    console.log('       KLETTERHALLE');
+    console.log(`       ${strings.header}`);
     console.log('       ============');
-    console.log(new Date().toLocaleString('de-CH'));
+    console.log(new Date().toLocaleString(lang === 'it' ? 'it-CH' : 'en-CH'));
     console.log();
 
     for (const item of options.items) {
@@ -32,12 +43,12 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
 
     console.log();
     console.log('-------------------');
-    console.log(`TOTAL${' '.repeat(15)}${formatChf(options.total)}`);
+    console.log(`${strings.total}${' '.repeat(15)}${formatChf(options.total)}`);
     console.log();
-    console.log(`Bezahlt via: ${options.paymentMethod}`);
-    console.log(`Transaktion: ${options.transactionId.slice(0, 12)}...`);
+    console.log(`${strings.paidWith} ${options.paymentMethod}`);
+    console.log(`${strings.transaction} ${options.transactionId.slice(0, 12)}...`);
     console.log();
-    console.log('       Vielen Dank!');
+    console.log(`       ${strings.thankYou}`);
     console.log('       ============');
     console.log();
     console.log('='.repeat(40));
@@ -61,10 +72,10 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
     // Header
     printer.alignCenter();
     printer.setTextSize(2, 2);
-    printer.println('KLETTERHALLE');
+    printer.println(strings.header);
     printer.setTextSize(1, 1);
     printer.println('===================');
-    printer.println(new Date().toLocaleString('de-CH'));
+    printer.println(new Date().toLocaleString(lang === 'it' ? 'it-CH' : 'en-CH'));
     printer.newLine();
 
     // Items
@@ -83,7 +94,7 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
     // Total
     printer.setTextSize(2, 2);
     printer.tableCustom([
-      { text: 'TOTAL', width: 0.5, align: 'LEFT' },
+      { text: strings.total, width: 0.5, align: 'LEFT' },
       { text: formatChf(options.total), width: 0.5, align: 'RIGHT' }
     ]);
 
@@ -91,13 +102,13 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
     printer.newLine();
 
     // Payment info
-    printer.println(`Bezahlt via: ${options.paymentMethod}`);
-    printer.println(`Transaktion: ${options.transactionId.slice(0, 12)}...`);
+    printer.println(`${strings.paidWith} ${options.paymentMethod}`);
+    printer.println(`${strings.transaction} ${options.transactionId.slice(0, 12)}...`);
     printer.newLine();
 
     // Footer
     printer.alignCenter();
-    printer.println('Vielen Dank!');
+    printer.println(strings.thankYou);
     printer.println('===================');
     printer.newLine();
     printer.newLine();
