@@ -1,0 +1,106 @@
+{
+  "currency": "CHF",
+  "groups": [
+    {
+      "id": "daily",
+      "step": 1,
+      "label": {
+        "it": "Giornaliera",
+        "en": "Daily pass"
+      },
+      "layout": "list",
+      "products": [
+        {
+          "id": "adult",
+          "label": {
+            "it": "Adulti",
+            "en": "Adult"
+          },
+          "priceCents": 1600
+        },
+        {
+          "id": "student",
+          "label": {
+            "it": "Studenti <26",
+            "en": "Students <26"
+          },
+          "priceCents": 1300
+        },
+        {
+          "id": "teen",
+          "label": {
+            "it": "Ragazzi 13-16",
+            "en": "Teens 13-16"
+          },
+          "priceCents": 1000
+        },
+        {
+          "id": "child",
+          "label": {
+            "it": "Bambini 5-12",
+            "en": "Children 5-12"
+          },
+          "priceCents": 700
+        },
+        {
+          "id": "under5",
+          "label": {
+            "it": "Under 5",
+            "en": "Under 5"
+          },
+          "isFree": true
+        },
+        {
+          "id": "family",
+          "label": {
+            "it": "Famiglia <16",
+            "en": "Family <16"
+          },
+          "priceCents": 3200
+        }
+      ]
+    },
+    {
+      "id": "shower",
+      "step": 1,
+      "label": {
+        "it": "Doccia",
+        "en": "Shower"
+      },
+      "note": {
+        "it": "Inclusa con giornaliera",
+        "en": "Included with daily pass"
+      },
+      "layout": "list",
+      "products": [
+        {
+          "id": "shower",
+          "label": {
+            "it": "Solo doccia",
+            "en": "Shower only"
+          },
+          "priceCents": 600
+        }
+      ]
+    },
+    {
+      "id": "rental",
+      "step": 2,
+      "label": {
+        "it": "Noleggio",
+        "en": "Rental"
+      },
+      "layout": "single-card",
+      "products": [
+        {
+          "id": "shoes",
+          "label": {
+            "it": "Scarpette",
+            "en": "Climbing shoes"
+          },
+          "priceCents": 600
+        }
+      ]
+    }
+  ]
+}
