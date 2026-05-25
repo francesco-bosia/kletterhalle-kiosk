@@ -15,6 +15,131 @@ export function Step4Payment() {
   // Guard against double-clicks / concurrent flows
   const flowInProgress = useRef(false);
 
+  // ── Hooks: must be called unconditionally before any early returns ─────────
+
+  const handleCardPayment = useCallback(async () => {
+    if (flowInProgress.current || !terminal) return;
+    flowInProgress.current = true;
+
+    try {
+      // 1. Dispatch PAYMENT_STARTED with placeholder values
+      dispatch({
+        type: 'PAYMENT_STARTED',
+        paymentIntentId: '',
+        clientSecret: '',
+      });
+
+      // 2. Call POST /api/payments/create
+      const payload = toPaymentsCreatePayload(cart, lang, 'card');
+      const res = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        dispatch({
+          type: 'PAYMENT_FAILED',
+          error: data.error || data.details || 'Failed to create payment',
+        });
+        return;
+      }
+
+      // Update with real values
+      dispatch({
+        type: 'PAYMENT_STARTED',
+        paymentIntentId: data.paymentIntentId,
+        clientSecret: data.clientSecret,
+      });
+
+      // 3. Collect payment method via Stripe Terminal
+      const collectResult = await terminal.collectPaymentMethod(
+        data.clientSecret
+      );
+
+      if ('error' in collectResult) {
+        dispatch({
+          type: 'PAYMENT_FAILED',
+          error: collectResult.error.message || 'Failed to collect payment method',
+        });
+        return;
+      }
+
+      // 4. Process payment
+      const processResult = await terminal.processPayment(
+        collectResult.paymentIntent
+      );
+
+      if ('error' in processResult) {
+        dispatch({
+          type: 'PAYMENT_FAILED',
+          error: processResult.error.message || 'Payment processing failed',
+        });
+        return;
+      }
+
+      // 5. Success
+      dispatch({
+        type: 'PAYMENT_SUCCEEDED',
+        transactionId: processResult.paymentIntent.id,
+      });
+    } catch (err) {
+      dispatch({
+        type: 'PAYMENT_FAILED',
+        error: err instanceof Error ? err.message : 'Unexpected error',
+      });
+    } finally {
+      flowInProgress.current = false;
+    }
+  }, [terminal, cart, lang, dispatch]);
+
+  const handleTwintPayment = useCallback(async () => {
+    if (flowInProgress.current) return;
+    flowInProgress.current = true;
+
+    try {
+      dispatch({
+        type: 'PAYMENT_STARTED',
+        paymentIntentId: '',
+        clientSecret: '',
+      });
+
+      const payload = toPaymentsCreatePayload(cart, lang, 'twint');
+      const res = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        dispatch({
+          type: 'PAYMENT_FAILED',
+          error: data.error || data.details || 'Failed to create TWINT session',
+        });
+        return;
+      }
+
+      // Redirect to TWINT checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        dispatch({
+          type: 'PAYMENT_FAILED',
+          error: 'No checkout URL received',
+        });
+      }
+    } catch (err) {
+      dispatch({
+        type: 'PAYMENT_FAILED',
+        error: err instanceof Error ? err.message : 'Unexpected error',
+      });
+    } finally {
+      flowInProgress.current = false;
+    }
+  }, [cart, lang, dispatch]);
+
   // ── State 1: Success ────────────────────────────────────────────────────────
   if (phase === 'success') {
     return <Step4Success />;
@@ -109,7 +234,7 @@ export function Step4Payment() {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
               />
               <path
                 strokeLinecap="round"
@@ -128,83 +253,6 @@ export function Step4Payment() {
 
   // ── State 4: Card payment flow ─────────────────────────────────────────────
   if (payment.method === 'card') {
-    const handleCardPayment = useCallback(async () => {
-      if (flowInProgress.current || !terminal) return;
-      flowInProgress.current = true;
-
-      try {
-        // 1. Dispatch PAYMENT_STARTED with placeholder values
-        dispatch({
-          type: 'PAYMENT_STARTED',
-          paymentIntentId: '',
-          clientSecret: '',
-        });
-
-        // 2. Call POST /api/payments/create
-        const payload = toPaymentsCreatePayload(cart, lang, 'card');
-        const res = await fetch('/api/payments/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-
-        if (!res.ok || data.error) {
-          dispatch({
-            type: 'PAYMENT_FAILED',
-            error: data.error || data.details || 'Failed to create payment',
-          });
-          return;
-        }
-
-        // Update with real values
-        dispatch({
-          type: 'PAYMENT_STARTED',
-          paymentIntentId: data.paymentIntentId,
-          clientSecret: data.clientSecret,
-        });
-
-        // 3. Collect payment method via Stripe Terminal
-        const collectResult = await terminal.collectPaymentMethod(
-          data.clientSecret
-        );
-
-        if ('error' in collectResult) {
-          dispatch({
-            type: 'PAYMENT_FAILED',
-            error: collectResult.error.message || 'Failed to collect payment method',
-          });
-          return;
-        }
-
-        // 4. Process payment
-        const processResult = await terminal.processPayment(
-          collectResult.paymentIntent
-        );
-
-        if ('error' in processResult) {
-          dispatch({
-            type: 'PAYMENT_FAILED',
-            error: processResult.error.message || 'Payment processing failed',
-          });
-          return;
-        }
-
-        // 5. Success
-        dispatch({
-          type: 'PAYMENT_SUCCEEDED',
-          transactionId: processResult.paymentIntent.id,
-        });
-      } catch (err) {
-        dispatch({
-          type: 'PAYMENT_FAILED',
-          error: err instanceof Error ? err.message : 'Unexpected error',
-        });
-      } finally {
-        flowInProgress.current = false;
-      }
-    }, [terminal, cart, lang, dispatch]);
-
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-10">
         {/* Connection status */}
@@ -304,54 +352,6 @@ export function Step4Payment() {
 
   // ── State 5: TWINT flow ────────────────────────────────────────────────────
   if (payment.method === 'twint') {
-    // We need to redirect to TWINT checkout. Use an effect-like approach:
-    // Since this is render-time, we'll use a button-triggered redirect.
-    const handleTwintPayment = useCallback(async () => {
-      if (flowInProgress.current) return;
-      flowInProgress.current = true;
-
-      try {
-        dispatch({
-          type: 'PAYMENT_STARTED',
-          paymentIntentId: '',
-          clientSecret: '',
-        });
-
-        const payload = toPaymentsCreatePayload(cart, lang, 'twint');
-        const res = await fetch('/api/payments/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-
-        if (!res.ok || data.error) {
-          dispatch({
-            type: 'PAYMENT_FAILED',
-            error: data.error || data.details || 'Failed to create TWINT session',
-          });
-          return;
-        }
-
-        // Redirect to TWINT checkout
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-        } else {
-          dispatch({
-            type: 'PAYMENT_FAILED',
-            error: 'No checkout URL received',
-          });
-        }
-      } catch (err) {
-        dispatch({
-          type: 'PAYMENT_FAILED',
-          error: err instanceof Error ? err.message : 'Unexpected error',
-        });
-      } finally {
-        flowInProgress.current = false;
-      }
-    }, [cart, lang, dispatch]);
-
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-10">
         {/* TWINT icon */}

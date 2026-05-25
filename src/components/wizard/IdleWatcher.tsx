@@ -16,7 +16,9 @@ export function IdleWatcher() {
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phaseRef = useRef<IdlePhase>(phase);
-  phaseRef.current = phase;
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const clearTimers = useCallback(() => {
     if (idleTimerRef.current !== null) {
@@ -57,8 +59,11 @@ export function IdleWatcher() {
     // Disable idle timer during payment step
     if (state.step === 4) {
       clearTimers();
-      setPhase('armed');
-      return;
+      // Use a timeout to avoid synchronous setState in effect body
+      const t = setTimeout(() => setPhase('armed'), 0);
+      return () => {
+        clearTimeout(t);
+      };
     }
 
     // Start the idle timer whenever we enter this effect (step changes, etc.)

@@ -13,7 +13,7 @@ interface ProductRowProps {
   lang: Lang;
 }
 
-export function ProductRow({ product, quantity, onInc, onDec, lang }: ProductRowProps) {
+export function ProductRow({ product, quantity, onInc, onDec }: ProductRowProps) {
   const isFree = product.isFree === true;
 
   return (
