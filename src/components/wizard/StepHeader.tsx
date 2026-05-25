@@ -8,7 +8,7 @@ export function StepHeader() {
   const { state, dispatch } = useWizard();
   const { step, phase } = state;
 
-  const isDisabled = phase === 'processing' || phase === 'success' || phase === 'failed';
+  const isDisabled = phase === 'paying' || phase === 'success' || phase === 'failed';
 
   function goToStep(targetStep: 1 | 2 | 3 | 4) {
     if (isDisabled) return;
