@@ -18,10 +18,16 @@ export function WizardChrome() {
       <StepHeader />
 
       <main className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
-        {state.step === 1 && <Step1Tickets />}
-        {state.step === 2 && <Step2Shoes />}
-        {state.step === 3 && <Step3Summary />}
-        {(state.step === 4 || state.phase === 'success') && <Step4Payment />}
+        {state.phase === 'success' ? (
+          <Step4Payment />
+        ) : (
+          <>
+            {state.step === 1 && <Step1Tickets />}
+            {state.step === 2 && <Step2Shoes />}
+            {state.step === 3 && <Step3Summary />}
+            {state.step === 4 && <Step4Payment />}
+          </>
+        )}
       </main>
 
       {state.step !== 4 && state.phase !== 'success' && <StepFooter />}
