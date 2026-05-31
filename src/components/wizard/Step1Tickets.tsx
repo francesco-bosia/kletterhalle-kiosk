@@ -15,8 +15,6 @@ export function Step1Tickets() {
       <StepTitle
         it="Scegli i biglietti"
         en="Choose your tickets"
-        descriptionIt="Puoi acquistare più biglietti contemporaneamente."
-        descriptionEn="You can purchase several tickets at once."
       />
 
       {groups.map((group) => (

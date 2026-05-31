@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { headers } from 'next/headers';
-import { getTicketById, formatTicketPrice } from '@/lib/tickets';
+import { getTicketById } from '@/lib/tickets';
+import { expandCompactItems } from '@/lib/cart';
 
 /**
  * POST /api/webhooks/stripe
@@ -12,6 +13,7 @@ import { getTicketById, formatTicketPrice } from '@/lib/tickets';
  * Events handled:
  * - checkout.session.completed: TWINT payments via Checkout
  * - payment_intent.succeeded: Card payments via Terminal
+ * - payment_intent.payment_failed: Payment failures
  */
 export async function POST(request: NextRequest) {
   try {
@@ -53,62 +55,53 @@ export async function POST(request: NextRequest) {
 
     console.log('Received webhook event:', event.type);
 
-    // Handle checkout session completed (TWINT payments)
+    // Handle checkout session completed (TWINT payments via Checkout)
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as any;
 
       if (session.payment_status === 'paid') {
-        const ticketId = session.metadata?.ticketId;
         const lang = session.metadata?.lang || 'it';
+        const cartData = session.metadata?.cartData;
+        const expandedItems = cartData ? expandCompactItems(JSON.parse(cartData)) : [];
 
-        if (ticketId) {
-          const ticket = getTicketById(ticketId);
+        console.log('TWINT payment successful:', {
+          sessionId: session.id,
+          amount: session.amount_total,
+          itemCount: expandedItems.length,
+        });
 
-          console.log('TWINT payment successful:', {
-            sessionId: session.id,
-            ticketId,
-            ticketName: ticket?.name,
-            amount: session.amount_total,
-          });
+        // Log transaction locally
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/transactions/log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: expandedItems,
+            total: session.amount_total,
+            paymentMethod: 'TWINT',
+            stripeIds: { checkoutSession: session.id, paymentIntent: session.payment_intent },
+          }),
+        }).catch(err => console.error('Transaction log failed:', err));
 
-          // Log transaction locally
-          const cartData = session.metadata?.cartData;
-          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/transactions/log`, {
+        // Trigger thermal print
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              items: cartData ? JSON.parse(cartData) : [],
+              items: expandedItems,
               total: session.amount_total,
+              transactionId: session.payment_intent,
               paymentMethod: 'TWINT',
-              stripeIds: { checkoutSession: session.id, paymentIntent: session.payment_intent },
+              lang,
             }),
-          }).catch(err => console.error('Transaction log failed:', err));
-
-          // Trigger thermal print
-          try {
-            const cartData = session.metadata?.cartData;
-            const items = cartData ? JSON.parse(cartData) : [];
-
-            await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                items,
-                total: session.amount_total,
-                transactionId: session.payment_intent,
-                paymentMethod: 'TWINT',
-                lang,
-              }),
-            });
-          } catch (printError) {
-            console.error('Webhook print failed:', printError);
-            // Don't fail webhook if print fails
-          }
+          });
+        } catch (printError) {
+          console.error('Webhook print failed:', printError);
         }
       }
     }
 
-    // Handle payment intent succeeded (Card payments via Terminal)
+    // Handle payment intent succeeded (Card via Terminal)
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as any;
 
@@ -128,11 +121,12 @@ export async function POST(request: NextRequest) {
 
         // Log transaction locally
         const cartData = paymentIntent.metadata?.cartData;
+        const expandedItems = cartData ? expandCompactItems(JSON.parse(cartData)) : [];
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/transactions/log`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: cartData ? JSON.parse(cartData) : [],
+            items: expandedItems,
             total: paymentIntent.amount,
             paymentMethod: 'card',
             stripeIds: { paymentIntent: paymentIntent.id },
@@ -146,13 +140,13 @@ export async function POST(request: NextRequest) {
       // Trigger thermal print
       try {
         const cartData = paymentIntent.metadata?.cartData;
-        const items = cartData ? JSON.parse(cartData) : [];
+        const expandedItems = cartData ? expandCompactItems(JSON.parse(cartData)) : [];
 
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items,
+            items: expandedItems,
             total: paymentIntent.amount,
             transactionId: paymentIntent.id,
             paymentMethod: localizedPaymentMethod,

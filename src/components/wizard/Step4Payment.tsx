@@ -4,6 +4,7 @@ import { useCallback, useRef } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { useTerminal } from '@/components/terminal-provider';
 import { toPaymentsCreatePayload } from '@/lib/cart';
+
 import { t } from '@/lib/i18n';
 import { Step4Success } from '@/components/wizard/Step4Success';
 
@@ -121,7 +122,7 @@ export function Step4Payment() {
         return;
       }
 
-      // Redirect to TWINT checkout
+      // Redirect to Stripe Checkout for TWINT payment
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
@@ -197,11 +198,11 @@ export function Step4Payment() {
           {/* Card payment button */}
           <button
             onClick={() => dispatch({ type: 'SET_METHOD', method: 'card' })}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-6 transition-colors hover:border-blue-400 hover:bg-blue-50 active:border-blue-500 active:bg-blue-100"
+            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-6 transition-colors hover:border-black hover:bg-gray-50 active:border-black active:bg-gray-100"
           >
             {/* Card icon */}
             <svg
-              className="h-12 w-12 text-blue-600"
+              className="h-12 w-12 text-black"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -221,11 +222,11 @@ export function Step4Payment() {
           {/* TWINT payment button */}
           <button
             onClick={() => dispatch({ type: 'SET_METHOD', method: 'twint' })}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-6 transition-colors hover:border-green-400 hover:bg-green-50 active:border-green-500 active:bg-green-100"
+            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-6 transition-colors hover:border-black hover:bg-gray-50 active:border-black active:bg-gray-100"
           >
             {/* TWINT-style icon (simplified QR code) */}
             <svg
-              className="h-12 w-12 text-green-600"
+              className="h-12 w-12 text-black"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -234,7 +235,7 @@ export function Step4Payment() {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5z"
               />
               <path
                 strokeLinecap="round"
@@ -276,9 +277,9 @@ export function Step4Payment() {
         </div>
 
         {/* Card icon */}
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
           <svg
-            className="h-10 w-10 text-blue-600"
+            className="h-10 w-10 text-black"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -311,7 +312,7 @@ export function Step4Payment() {
             disabled={!isConnected || !!terminalError}
             className={`rounded-xl px-8 py-3 text-base font-semibold transition-colors ${
               isConnected && !terminalError
-                ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                ? 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
                 : 'cursor-not-allowed bg-gray-300 text-gray-500'
             }`}
           >
@@ -323,7 +324,7 @@ export function Step4Payment() {
         {phase === 'paying' && (
           <div className="flex items-center gap-2">
             <svg
-              className="h-5 w-5 animate-spin text-blue-600"
+              className="h-5 w-5 animate-spin text-black"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -355,9 +356,9 @@ export function Step4Payment() {
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-10">
         {/* TWINT icon */}
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
           <svg
-            className="h-10 w-10 text-green-600"
+            className="h-10 w-10 text-black"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -366,7 +367,7 @@ export function Step4Payment() {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+              d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125-1.125 0 01-1.125-1.125v-4.5z"
             />
             <path
               strokeLinecap="round"
@@ -383,7 +384,7 @@ export function Step4Payment() {
         {phase === 'shopping' && (
           <button
             onClick={handleTwintPayment}
-            className="rounded-xl bg-green-600 px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800"
+            className="rounded-xl bg-black px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-gray-800 active:bg-gray-700"
           >
             {lang === 'it' ? 'Vai al pagamento' : 'Proceed to payment'}
           </button>
@@ -392,7 +393,7 @@ export function Step4Payment() {
         {phase === 'paying' && (
           <div className="flex items-center gap-2">
             <svg
-              className="h-5 w-5 animate-spin text-green-600"
+              className="h-5 w-5 animate-spin text-black"
               fill="none"
               viewBox="0 0 24 24"
             >

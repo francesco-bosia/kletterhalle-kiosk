@@ -15,10 +15,10 @@ interface StepTitleProps {
 export function StepTitle({ it, en, descriptionIt, descriptionEn }: StepTitleProps) {
   return (
     <div className="mb-6">
-      <h1 className="text-5xl font-black text-black tracking-tight leading-[1.05]">
+      <h1 className="text-4xl font-black text-black tracking-tight leading-[1.05]">
         {it}
       </h1>
-      <p className="text-xl italic text-gray-400 mt-2">
+      <p className="text-lg italic text-gray-400 mt-1">
         {en}
       </p>
 
@@ -29,7 +29,7 @@ export function StepTitle({ it, en, descriptionIt, descriptionEn }: StepTitlePro
             {descriptionIt && descriptionEn && <br />}
             {descriptionEn}
           </p>
-          <hr className="border-gray-200 mt-6" />
+          <hr className="border-gray-200 mt-3" />
         </>
       )}
     </div>

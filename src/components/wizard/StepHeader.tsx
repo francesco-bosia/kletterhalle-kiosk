@@ -1,60 +1,60 @@
-'use client';
+"use client";
 
-import { useWizard } from '@/lib/wizard-context';
+import { useWizard } from "@/lib/wizard-context";
 
-const TOTAL_STEPS = 4 as const;
+const STEPS = [
+  { num: 1, label: "biglietti" },
+  { num: 2, label: "scarpette" },
+  { num: 3, label: "riepilogo" },
+  { num: 4, label: "pagamento" },
+] as const;
 
 export function StepHeader() {
   const { state, dispatch } = useWizard();
   const { step, phase } = state;
 
-  const isDisabled = phase === 'paying' || phase === 'success' || phase === 'failed';
+  const isDisabled =
+    phase === "paying" || phase === "success" || phase === "failed";
 
   function goToStep(targetStep: 1 | 2 | 3 | 4) {
     if (isDisabled) return;
-    if (targetStep >= step) return; // Can't jump forward
-    dispatch({ type: 'GO_TO_STEP', step: targetStep });
+    if (targetStep >= step) return;
+    dispatch({ type: "GO_TO_STEP", step: targetStep });
   }
 
+  const pillBase =
+    "rounded-full px-2.5 text-[10px] font-semibold tracking-tight uppercase " +
+    "whitespace-nowrap h-6 transition-colors";
+
   return (
-    <header className="flex items-center justify-center px-5 py-4 gap-3">
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => {
-        const stepNum = (i + 1) as 1 | 2 | 3 | 4;
-        const isActive = step === stepNum;
-        const isPast = stepNum < step;
+    <header className="flex items-center gap-2 px-3 pt-3 pb-3 border-b border-gray-200">
+      {STEPS.map(({ num, label }) => {
+        const isActive = step === num;
+        const isPast = num < step;
+        const stepNum = num as 1 | 2 | 3 | 4;
 
-        if (isActive) {
-          return (
-            <button
-              key={stepNum}
-              disabled={isDisabled}
-              className="rounded-full px-4 py-2 text-xs font-bold tracking-[0.15em] uppercase bg-black text-white cursor-default"
-            >
-              STEP {stepNum}
-            </button>
-          );
-        }
+        // Color state classes
+        const activeClasses = "bg-black text-white";
+        const pastClasses =
+          "bg-gray-200 text-black hover:bg-gray-300 active:bg-gray-400";
+        const futureClasses = "bg-gray-100 text-gray-400";
 
-        if (isPast) {
-          return (
-            <button
-              key={stepNum}
-              onClick={() => goToStep(stepNum)}
-              disabled={isDisabled}
-              className="rounded-full px-4 py-2 text-xs font-bold tracking-[0.15em] uppercase bg-gray-200 text-black hover:bg-gray-300 active:bg-gray-400 transition-colors"
-            >
-              STEP {stepNum}
-            </button>
-          );
-        }
+        const pillClasses = isActive
+          ? `${pillBase} ${activeClasses}`
+          : isPast
+            ? `${pillBase} ${pastClasses}`
+            : `${pillBase} ${futureClasses}`;
 
         return (
           <button
-            key={stepNum}
-            disabled
-            className="rounded-full px-4 py-2 text-xs font-bold tracking-[0.15em] uppercase border border-gray-200 text-gray-300 cursor-not-allowed"
+            key={num}
+            type="button"
+            onClick={() => goToStep(stepNum)}
+            disabled={isActive || !isPast || isDisabled}
+            className={`${pillClasses} flex-1`}
+            aria-current={isActive ? "step" : undefined}
           >
-            STEP {stepNum}
+            {num} {label}
           </button>
         );
       })}

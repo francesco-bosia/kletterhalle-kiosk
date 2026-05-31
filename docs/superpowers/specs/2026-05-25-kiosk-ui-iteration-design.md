@@ -14,14 +14,14 @@ The current wizard UI in `src/components/wizard/` does not match the agreed mock
 4. Step titles in Step 1 / Step 3 are left-aligned, Step 2 is centered — inconsistent and against the reference (all left-aligned).
 5. There is no overview of progress: the current header shows only the active step pill, which doubles as a single-step back button. We want a 4-pill stepper.
 6. Several small visual issues: `formatChf` always shows `.00`; `QuantityControl` is too small and never turns the `+` button black on active state; the Step 2 product card lacks the card structure shown in the reference; the footer "Continue" button is not bilingual.
-7. The receipt/success screen is bilingual; per requirement it should be Italian-only.
+7. The receipt is bilingual; per requirement it should be Italian-only.
 
 ## Goals
 
 - Match the reference mockups for Step 1, Step 2, and Step 3.
 - Display the wizard as a fixed 720×1280 centered card on desktop preview; full-bleed on the Pi.
 - Add a 4-pill stepper at the top, with the current step black and past steps clickable to navigate back.
-- Make the receipt/success screen Italian-only.
+- Make the receipt Italian-only.
 - Extract reusable primitives so future steps inherit the typography and the desktop frame for free.
 
 ## Non-Goals
@@ -137,6 +137,10 @@ Card classes: `bg-gray-100 rounded-3xl p-6`. The "skip this step" link stays bel
 
 Uses `StepTitle` (left-aligned). Line items + grand-total card unchanged in structure; minor type tweaks to align with the rest of the design (h1 size, description alignment).
 
+### 7 1/2. `Payment Choice screen` (modified)
+
+Colors are to be turned in same colors as theme, just minimal black and white (same shades as rest of app). No colorful qr code/card, same symbols, but black and white.
+
 ### 8. `Step4Success` (Italian-only)
 
 Single language. Drops all `t()` calls and `lang` reads:
@@ -213,7 +217,7 @@ Single PR. No data migration. The `t()` helper and `lang` state remain in place 
 
 ## Out of Scope (Explicit)
 
-- Step 4 Payment-choice screen — not retouched. Only the post-success sub-screen becomes Italian-only.
+- Step 4 Payment-choice screen — Only colors are retouched. Only the post-success sub-screen becomes Italian-only.
 - Idle modal — keeps bilingual treatment.
 - Receipt PDF / printed output — not touched.
 - Catalog data, prices, payment flow, terminal logic.

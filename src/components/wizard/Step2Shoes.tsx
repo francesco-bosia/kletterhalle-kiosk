@@ -30,16 +30,16 @@ export function Step2Shoes() {
   return (
     <div>
       <StepTitle
-        it="Vuoi noleggiare le scarpette?"
-        en="Need climbing shoes?"
-        descriptionIt="Aggiungi il numero di paia necessarie."
-        descriptionEn="Add the number of pairs you need."
+        it="Scarpette"
+        en="Climbing shoes"
+        descriptionIt="Vuoi noleggiare delle scarpette? Indica quante."
+        descriptionEn="Would you like to rent climbing shoes? Choose how many."
       />
 
       {/* Single product card */}
-      <div className="w-full max-w-sm mx-auto bg-gray-100 rounded-3xl p-6">
+      <div className="w-full max-w-sm mx-auto bg-gray-100 rounded-3xl p-5">
         {/* Header */}
-        <div className="flex items-baseline justify-between mb-6">
+        <div className="flex items-baseline justify-between mb-4">
           <h3 className="text-sm font-extrabold tracking-[0.2em] text-black">
             NOLEGGIO
           </h3>
@@ -50,7 +50,7 @@ export function Step2Shoes() {
 
         {/* Product name */}
         <div className="text-center mb-4">
-          <h2 className="text-4xl font-black text-black">
+          <h2 className="text-3xl font-black text-black">
             {product.label.it}
           </h2>
           <p className="text-lg italic text-gray-400 mt-1">
@@ -59,8 +59,8 @@ export function Step2Shoes() {
         </div>
 
         {/* Price */}
-        <div className="text-center mb-6">
-          <p className="text-3xl font-black text-black">
+        <div className="text-center mb-4">
+          <p className="text-2xl font-black text-black">
             {formatChf(product.priceCents)}
           </p>
           <p className="text-sm text-gray-500">
@@ -69,7 +69,7 @@ export function Step2Shoes() {
         </div>
 
         {/* Divider */}
-        <hr className="border-gray-200 mb-6" />
+        <hr className="border-gray-200 mb-4" />
 
         {/* Quantity selector */}
         <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ export function Step2Shoes() {
       <button
         type="button"
         onClick={handleSkip}
-        className="mt-6 w-full text-center text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
+        className="mt-4 w-full text-center text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
       >
         No grazie, salta questo passo
         <br />

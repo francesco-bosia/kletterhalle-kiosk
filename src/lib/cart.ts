@@ -1,4 +1,5 @@
 import type { Lang } from './i18n';
+import { getProductById } from './catalog';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -81,8 +82,13 @@ export function cartItemCount(cart: CartLine[]): number {
 
 // ── API payload mappers ────────────────────────────────────────────────────────
 
+export interface CompactCartItem {
+  id: string;
+  qty: number;
+}
+
 export interface PaymentsCreatePayload {
-  items: Array<{ ticketId: string; ticketName: string; price: number; quantity: number }>;
+  items: CompactCartItem[];
   total: number;
   paymentMethod: 'card' | 'twint';
   lang: Lang;
@@ -94,16 +100,39 @@ export function toPaymentsCreatePayload(
   paymentMethod: 'card' | 'twint'
 ): PaymentsCreatePayload {
   return {
-    items: cart.map((l) => ({
-      ticketId: l.productId,
-      ticketName: lang === 'it' ? l.labelIt : l.labelEn,
-      price: l.priceCents,
-      quantity: l.quantity,
-    })),
+    items: cart.map((l) => ({ id: l.productId, qty: l.quantity })),
     total: cartTotal(cart),
     paymentMethod,
     lang,
   };
+}
+
+// ── Cart expansion helpers ───────────────────────────────────────────────────────────
+
+export interface ExpandedCartItem {
+  ticketId: string;
+  ticketName: string;
+  price: number;
+  quantity: number;
+}
+
+/**
+ * Expands compact {id, qty}[] items by looking up products from the catalog.
+ * Used server-side to reconstruct full item details from Stripe metadata.
+ */
+export function expandCompactItems(
+  items: CompactCartItem[]
+): ExpandedCartItem[] {
+  return items.map((it) => {
+    const p = getProductById(it.id);
+    if (!p) throw new Error(`Unknown product id: ${it.id}`);
+    return {
+      ticketId: it.id,
+      ticketName: p.label.it, // Italian names for TWINT line items
+      price: p.isFree ? 0 : p.priceCents,
+      quantity: it.qty,
+    };
+  });
 }
 
 export interface PrintPayload {

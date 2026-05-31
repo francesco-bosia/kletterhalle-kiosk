@@ -10,8 +10,10 @@ interface DeviceFrameProps {
  */
 export function DeviceFrame({ children }: DeviceFrameProps) {
   return (
-    <div className="device-frame">
-      {children}
+    <div className="device-frame-wrap">
+      <div className="device-frame">
+        {children}
+      </div>
     </div>
   );
 }

@@ -28,15 +28,15 @@ export function StepFooter() {
   }
 
   return (
-    <footer className="sticky bottom-0 bg-white px-5 py-4">
-      <div className="flex items-center justify-between">
+    <footer className="sticky bottom-0 bg-white border-t border-gray-100 px-5 py-4">
+      <div className="flex items-center justify-between gap-4">
         {/* Running total */}
-        <div className="flex flex-col">
-          <span className="text-xs font-bold text-black uppercase tracking-wider">
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-bold text-black">
             Totale{' '}
             <span className="italic font-normal text-gray-400">Total</span>
           </span>
-          <span className="text-4xl font-black tabular-nums text-black">
+          <span className="text-2xl font-black tabular-nums text-black leading-tight">
             {formatChf(total)}
           </span>
         </div>
@@ -45,16 +45,16 @@ export function StepFooter() {
         <button
           onClick={handleContinue}
           disabled={isContinueDisabled}
-          className={`rounded-2xl px-8 py-4 transition-colors flex flex-col items-center ${
+          className={`rounded-3xl px-8 py-3 transition-colors flex flex-col items-center shrink-0 ${
             isContinueDisabled
               ? 'cursor-not-allowed bg-gray-100'
               : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
           }`}
         >
-          <span className={`text-xl font-bold ${isContinueDisabled ? 'text-gray-300' : 'text-white'}`}>
+          <span className={`text-lg font-bold leading-tight ${isContinueDisabled ? 'text-gray-300' : 'text-white'}`}>
             {currentLabel.it}
           </span>
-          <span className={`text-sm italic font-medium ${isContinueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
+          <span className={`text-sm italic font-medium leading-tight ${isContinueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
             {currentLabel.en}
           </span>
         </button>

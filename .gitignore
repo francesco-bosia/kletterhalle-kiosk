@@ -43,3 +43,43 @@ next-env.d.ts
 # Transaction logs
 transactions/*.jsonl
 !transactions/.gitkeep
+
+# Third-party AI tool configs
+.adal/
+.agents/
+.augment/
+.bob/
+.claude/
+.codebuddy/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.factory/
+.goose/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# Plugin artifacts
+skills-lock.json
+skills/
+
+# Internal planning docs (not project source)
+docs/plans/
+docs/superpowers/plans/

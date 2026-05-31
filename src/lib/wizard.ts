@@ -68,14 +68,8 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
         cart: cartReducer(state.cart, action as CartAction),
       };
 
-    case 'GO_TO_STEP': {
-      const target = action.step;
-      // Only allow backward or forward by 1
-      if (Math.abs(target - state.step) !== 1 && target !== state.step) {
-        return state;
-      }
-      return { ...state, step: target };
-    }
+    case 'GO_TO_STEP':
+      return { ...state, step: action.step };
 
     case 'SET_LANG':
       return { ...state, lang: action.lang };

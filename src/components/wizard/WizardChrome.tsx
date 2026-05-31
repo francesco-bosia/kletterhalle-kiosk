@@ -17,7 +17,7 @@ export function WizardChrome() {
     <DeviceFrame>
       <StepHeader />
 
-      <main className="flex-1 overflow-y-auto px-5 py-2">
+      <main className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
         {state.step === 1 && <Step1Tickets />}
         {state.step === 2 && <Step2Shoes />}
         {state.step === 3 && <Step3Summary />}

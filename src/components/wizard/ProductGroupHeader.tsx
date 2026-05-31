@@ -2,42 +2,31 @@
 
 import type { Group } from '@/lib/catalog';
 
-interface IncludedNote {
-  it: string;
-  en: string;
-}
-
 interface ProductGroupHeaderProps {
   group: Group;
-  includedNote?: IncludedNote;
 }
 
-export function ProductGroupHeader({ group, includedNote }: ProductGroupHeaderProps) {
+export function ProductGroupHeader({ group }: ProductGroupHeaderProps) {
+  const note = group.note;
+
   return (
-    <div className="mb-3 mt-10 first:mt-0">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-extrabold tracking-[0.2em] text-black flex items-center gap-2">
-          {group.label.it.toUpperCase()}
-          {includedNote && (
-            <span className="font-normal tracking-normal not-italic text-sm text-gray-600">
-              — {includedNote.it}
+    <div className="mb-1 mt-5 first:mt-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-extrabold tracking-[0.2em] text-black uppercase">
+          {group.label.it}
+          {note && (
+            <span className="ml-2 font-normal tracking-normal normal-case text-sm text-gray-600">
+              — {note.it}
             </span>
           )}
         </h2>
-        <div className="text-right">
-          <span className="text-sm text-gray-400">
-            {group.label.en}
-          </span>
-          {includedNote && (
-            <div className="text-sm italic text-gray-400">
-              {includedNote.en}
-            </div>
-          )}
-        </div>
+        <span className="text-sm italic text-gray-400 shrink-0">
+          {group.label.en}
+        </span>
       </div>
-      {group.note && (
-        <p className="mt-1 text-xs text-gray-400 italic">
-          {group.note.it} / {group.note.en}
+      {note && (
+        <p className="mt-0.5 text-sm italic text-gray-400">
+          {group.label.en} — {note.en}
         </p>
       )}
     </div>

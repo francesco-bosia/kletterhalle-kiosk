@@ -23,7 +23,7 @@ function SuccessRedirector() {
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
         <svg
-          className="mx-auto h-8 w-8 animate-spin text-green-600"
+          className="mx-auto h-8 w-8 animate-spin text-black"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -54,9 +54,10 @@ function SuccessRedirector() {
 /**
  * Thin wrapper page that handles TWINT redirect returns.
  *
- * After a TWINT payment, Stripe redirects to /success?total=...
+ * After a TWINT Checkout Session, Stripe redirects to
+ * /success?total=... (the success_url configured on the session).
  * This page reads the params and redirects back to the main wizard
- * with twint_return=true so WizardRoot can pick it up.
+ * with twint_return=true&total=... so WizardRoot can pick it up.
  */
 export default function SuccessPage() {
   return (
