@@ -76,3 +76,16 @@ export function takePendingCompletion(): CompletionPayload | null {
     return null;
   }
 }
+
+/**
+ * Remove any stashed completion without replaying it. Used when a TWINT
+ * checkout is cancelled/abandoned so a stale payload can never replay later.
+ */
+export function discardPendingCompletion(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PENDING_KEY);
+  } catch (err) {
+    console.error('Failed to discard pending completion:', err);
+  }
+}

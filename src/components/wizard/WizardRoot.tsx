@@ -6,7 +6,7 @@ import { wizardReducer, createInitialState } from '@/lib/wizard';
 import { WizardReactContext } from '@/lib/wizard-context';
 import { TerminalProvider } from '@/components/terminal-provider';
 import { WizardChrome } from '@/components/wizard/WizardChrome';
-import { completePayment, takePendingCompletion } from '@/lib/completion-client';
+import { completePayment, discardPendingCompletion, takePendingCompletion } from '@/lib/completion-client';
 
 /**
  * Detects a TWINT return redirect from URL search params.
@@ -20,14 +20,21 @@ function TwintReturnDetector({ dispatch }: { dispatch: React.Dispatch<import('@/
     if (twintReturn === 'true') {
       // Read-and-remove the stashed completion so it replays at most once
       // (guards against StrictMode double-invoke and manual refreshes).
+      // Only act when a payload is actually present: on a StrictMode second
+      // invoke (or a refresh after the key was consumed) `pending` is null,
+      // and we must NOT re-dispatch a placeholder transaction id or re-clean
+      // the URL.
       const pending = takePendingCompletion();
-      if (pending) completePayment(pending);
-      dispatch({
-        type: 'PAYMENT_SUCCEEDED',
-        transactionId: pending?.print.transactionId ?? 'twint-return',
-      });
-      // Clean the URL without a full page reload
-      window.history.replaceState({}, '', '/');
+      if (pending) {
+        completePayment(pending);
+        dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId: pending.print.transactionId });
+        // Clean the URL without a full page reload
+        window.history.replaceState({}, '', '/');
+      }
+    } else {
+      // Not a TWINT return (e.g. a cancelled/abandoned checkout returning to
+      // `/`): discard any stale stashed completion so it can never replay.
+      discardPendingCompletion();
     }
   }, [searchParams, dispatch]);
 

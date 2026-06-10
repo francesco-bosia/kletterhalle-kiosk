@@ -5,6 +5,7 @@ import {
   completePayment,
   stashPendingCompletion,
   takePendingCompletion,
+  discardPendingCompletion,
   type CompletionPayload,
 } from '@/lib/completion-client';
 
@@ -56,6 +57,12 @@ describe('stash/take pending completion', () => {
   it('returns the payload at most once (read-and-remove)', () => {
     stashPendingCompletion(sample);
     expect(takePendingCompletion()).toEqual(sample);
+    expect(takePendingCompletion()).toBeNull();
+  });
+
+  it('discardPendingCompletion removes a stashed payload without replaying it', () => {
+    stashPendingCompletion(sample);
+    discardPendingCompletion();
     expect(takePendingCompletion()).toBeNull();
   });
 });
