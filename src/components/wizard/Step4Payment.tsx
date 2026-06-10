@@ -137,8 +137,24 @@ export function Step4Payment() {
         return;
       }
 
-      // Redirect to Stripe Checkout for TWINT payment
+      // Redirect to Stripe Checkout for TWINT payment.
+      // The external redirect wipes the SPA state (and the in-memory cart),
+      // so stash the completion payload in localStorage now; WizardRoot
+      // replays it (print + log) on return to /?twint_return=true. The
+      // Checkout session id is a stable, unique id for the receipt/log.
       if (data.checkoutUrl) {
+        stashPendingCompletion({
+          print: toPrintPayload(cart, {
+            transactionId: data.sessionId ?? 'twint',
+            paymentMethod: 'TWINT',
+            lang,
+          }),
+          log: toTransactionLogPayload(cart, {
+            paymentMethod: 'twint',
+            lang,
+            stripeIds: { checkoutSession: data.sessionId },
+          }),
+        });
         window.location.href = data.checkoutUrl;
       } else {
         dispatch({

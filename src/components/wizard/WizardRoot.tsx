@@ -6,6 +6,7 @@ import { wizardReducer, createInitialState } from '@/lib/wizard';
 import { WizardReactContext } from '@/lib/wizard-context';
 import { TerminalProvider } from '@/components/terminal-provider';
 import { WizardChrome } from '@/components/wizard/WizardChrome';
+import { completePayment, takePendingCompletion } from '@/lib/completion-client';
 
 /**
  * Detects a TWINT return redirect from URL search params.
@@ -17,7 +18,14 @@ function TwintReturnDetector({ dispatch }: { dispatch: React.Dispatch<import('@/
   useEffect(() => {
     const twintReturn = searchParams.get('twint_return');
     if (twintReturn === 'true') {
-      dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId: 'twint-return' });
+      // Read-and-remove the stashed completion so it replays at most once
+      // (guards against StrictMode double-invoke and manual refreshes).
+      const pending = takePendingCompletion();
+      if (pending) completePayment(pending);
+      dispatch({
+        type: 'PAYMENT_SUCCEEDED',
+        transactionId: pending?.print.transactionId ?? 'twint-return',
+      });
       // Clean the URL without a full page reload
       window.history.replaceState({}, '', '/');
     }
