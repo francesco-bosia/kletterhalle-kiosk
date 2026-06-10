@@ -9,6 +9,7 @@ export interface WizardState {
   phase: 'shopping' | 'paying' | 'success' | 'failed';
   cart: CartLine[];
   lang: Lang;
+  view: 'normal' | 'penalty';
   payment: {
     method: 'card' | 'twint' | null;
     paymentIntentId: string | null;
@@ -33,7 +34,9 @@ export type WizardAction =
   | { type: 'PAYMENT_SUCCEEDED'; transactionId: string }
   | { type: 'PAYMENT_FAILED'; error: string }
   | { type: 'RETRY_PAYMENT' }
-  | { type: 'RESET_SESSION' };
+  | { type: 'RESET_SESSION' }
+  | { type: 'ENTER_PENALTY' }
+  | { type: 'EXIT_PENALTY' };
 
 // ── Initial state factory ──────────────────────────────────────────────────────
 
@@ -43,6 +46,7 @@ export function createInitialState(): WizardState {
     phase: 'shopping',
     cart: [],
     lang: 'it',
+    view: 'normal',
     payment: {
       method: null,
       paymentIntentId: null,
@@ -127,6 +131,22 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
           statusMessage: null,
           error: null,
         },
+      };
+
+    case 'ENTER_PENALTY':
+      return {
+        ...state,
+        view: 'penalty',
+        step: 1,
+        cart: cartReducer(state.cart, { type: 'CLEAR' }),
+      };
+
+    case 'EXIT_PENALTY':
+      return {
+        ...state,
+        view: 'normal',
+        step: 1,
+        cart: cartReducer(state.cart, { type: 'CLEAR' }),
       };
 
     case 'RESET_SESSION':
