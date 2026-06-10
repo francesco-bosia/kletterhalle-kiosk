@@ -94,10 +94,17 @@ export function TerminalProvider({ children }: TerminalProviderProps) {
           },
         });
 
-        // Discover readers (simulator or real)
-        const config = {
-          simulated: true,
-        };
+        // Discover readers. In production we connect to the physical
+        // internet reader (WisePOS E) registered to our Terminal location;
+        // in dev we fall back to the Stripe simulator. Toggle via env:
+        //   NEXT_PUBLIC_TERMINAL_SIMULATED=false  → use the real reader
+        //   NEXT_PUBLIC_TERMINAL_LOCATION_ID=tml_…→ restrict discovery to our location
+        const useSimulator = process.env.NEXT_PUBLIC_TERMINAL_SIMULATED !== 'false';
+        const locationId = process.env.NEXT_PUBLIC_TERMINAL_LOCATION_ID;
+
+        const config = useSimulator
+          ? { simulated: true }
+          : { simulated: false, location: locationId };
 
         const discoverResult = await terminalInstance.discoverReaders(config);
 
@@ -126,7 +133,11 @@ export function TerminalProvider({ children }: TerminalProviderProps) {
           // DeviceType is an enum, 'simulated' corresponds to a specific value
           setIsSimulator(String(readerType).includes('simulated'));
         } else {
-          setError('No readers found. Make sure the Stripe simulator is running.');
+          setError(
+            useSimulator
+              ? 'No readers found. Make sure the Stripe simulator is running.'
+              : 'No reader found. Make sure the reader is powered on, online, and registered to this location.'
+          );
         }
 
         if (mounted) {
