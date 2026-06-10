@@ -15,6 +15,7 @@ export function Step1Tickets() {
       <StepTitle
         it="Scegli i biglietti"
         en="Choose your tickets"
+        onSecretActivate={() => dispatch({ type: 'ENTER_PENALTY' })}
       />
 
       {groups.map((group) => (

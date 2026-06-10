@@ -102,5 +102,21 @@
         }
       ]
     }
-  ]
+  ],
+  "hidden": {
+    "groups": [
+      {
+        "id": "penalty",
+        "layout": "single-card",
+        "label": { "it": "Penale", "en": "Surcharge" },
+        "products": [
+          {
+            "id": "penalty",
+            "label": { "it": "Penale", "en": "Penalty" },
+            "priceCents": 10000
+          }
+        ]
+      }
+    ]
+  }
 }
