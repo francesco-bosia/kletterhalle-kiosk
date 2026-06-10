@@ -115,7 +115,7 @@ export function IdleWatcher() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
       <div className="w-[90%] max-w-md rounded-2xl bg-white px-10 py-12 text-center shadow-2xl">
-        <h2 className="mb-4 text-[28px] font-bold text-black">
+        <h2 className="mb-4 text-3xl font-bold tracking-tight text-black">
           {t('idle.title', lang)}
         </h2>
 
