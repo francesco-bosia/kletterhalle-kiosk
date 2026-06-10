@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           cartData: JSON.stringify(items), // Store compact shape
           itemCount: items.reduce((sum: number, item: CompactCartItem) => sum + item.qty, 0).toString(),
+          totalCents: computedTotal.toString(),
+          paymentMethod: 'card',
           lang: lang || 'it',
         },
         description: `Splüia: ${items.length} ticket type(s)`,
@@ -87,6 +89,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           cartData: JSON.stringify(items),
           itemCount: items.reduce((sum: number, item: CompactCartItem) => sum + item.qty, 0).toString(),
+          totalCents: computedTotal.toString(),
+          paymentMethod: 'twint',
           lang: lang || 'it',
         },
       });

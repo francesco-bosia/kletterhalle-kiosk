@@ -159,3 +159,45 @@ export function toPrintPayload(
     lang: opts.lang,
   };
 }
+
+export interface TransactionLogPayload {
+  items: Array<{
+    ticketId: string;
+    ticketName: string;
+    quantity: number;
+    price: number;
+  }>;
+  total: number;
+  paymentMethod: string;
+  stripeIds: {
+    paymentIntent?: string;
+    checkoutSession?: string;
+  };
+}
+
+/**
+ * Build the body for POST /api/transactions/log from the in-memory cart.
+ * Item shape matches the route's TransactionLog interface
+ * ({ ticketId, ticketName, quantity, price }) — do not rename these keys
+ * without updating src/app/api/transactions/log/route.ts.
+ */
+export function toTransactionLogPayload(
+  cart: CartLine[],
+  opts: {
+    paymentMethod: string;
+    lang: Lang;
+    stripeIds: { paymentIntent?: string; checkoutSession?: string };
+  }
+): TransactionLogPayload {
+  return {
+    items: cart.map((l) => ({
+      ticketId: l.productId,
+      ticketName: opts.lang === 'it' ? l.labelIt : l.labelEn,
+      quantity: l.quantity,
+      price: l.priceCents,
+    })),
+    total: cartTotal(cart),
+    paymentMethod: opts.paymentMethod,
+    stripeIds: opts.stripeIds,
+  };
+}
