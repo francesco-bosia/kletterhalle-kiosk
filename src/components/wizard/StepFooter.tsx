@@ -9,7 +9,7 @@ export function StepFooter() {
   const { step, cart, view } = state;
 
   const total = cartTotal(cart);
-  const isContinueDisabled = step === 1 && total === 0;
+  const isContinueDisabled = (step === 1 && total === 0) || (view === 'penalty' && total === 0);
 
   // Bilingual button labels — Italian primary (top), English secondary (below)
   const buttonLabels = {
