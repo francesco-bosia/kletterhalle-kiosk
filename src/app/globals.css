@@ -18,11 +18,11 @@
 }
 
 html {
-  font-size: 13px; /* desktop preview */
+  font-size: 15px; /* desktop preview */
 }
 @media (max-width: 720px) and (max-height: 1280px) {
   html {
-    font-size: 16px; /* actual Pi */
+    font-size: 18px; /* actual Pi */
   }
 }
 

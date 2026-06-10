@@ -46,7 +46,8 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
     console.log(`${strings.total}${' '.repeat(15)}${formatChf(options.total)}`);
     console.log();
     console.log(`${strings.paidWith} ${options.paymentMethod}`);
-    console.log(`${strings.transaction} ${options.transactionId.slice(0, 12)}...`);
+    console.log(strings.transaction);
+    console.log(options.transactionId);
     console.log();
     console.log(`       ${strings.thankYou}`);
     console.log('       ============');
@@ -69,11 +70,16 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
   try {
     await printer.isPrinterConnected();
 
+    // Use the smaller Font B for the whole receipt: more characters per line
+    // (so the full transaction code fits) and a more compact print overall.
+    printer.setTypeFontB();
+
     // Header
     printer.alignCenter();
-    printer.setTextSize(2, 2);
-    printer.println(strings.header);
     printer.setTextSize(1, 1);
+    printer.bold(true);
+    printer.println(strings.header);
+    printer.bold(false);
     printer.println('===================');
     printer.println(new Date().toLocaleString(lang === 'it' ? 'it-CH' : 'en-CH'));
     printer.newLine();
@@ -92,18 +98,20 @@ export async function printThermalReceipt(options: PrintReceiptOptions): Promise
     printer.println('-------------------');
 
     // Total
-    printer.setTextSize(2, 2);
+    printer.bold(true);
     printer.tableCustom([
       { text: strings.total, width: 0.5, align: 'LEFT' },
       { text: formatChf(options.total), width: 0.5, align: 'RIGHT' }
     ]);
+    printer.bold(false);
 
-    printer.setTextSize(1, 1);
     printer.newLine();
 
     // Payment info
     printer.println(`${strings.paidWith} ${options.paymentMethod}`);
-    printer.println(`${strings.transaction} ${options.transactionId.slice(0, 12)}...`);
+    // Print the full transaction code on its own line so it is never cropped.
+    printer.println(strings.transaction);
+    printer.println(options.transactionId);
     printer.newLine();
 
     // Footer
