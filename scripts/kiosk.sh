@@ -1,37 +1,27 @@
 #!/bin/bash
 #
 # Kletterhalle Kiosk Browser Startup Script
-# Launches Chromium in kiosk mode pointing to the local Next.js app
+# Launches Firefox in kiosk mode pointing to the local Next.js app.
 #
-# Installation:
-#   1. Copy to ~/kiosk/kiosk.sh
-#   2. chmod +x ~/kiosk/kiosk.sh
-#   3. Add to autostart via ~/.config/autostart/kiosk.desktop
+# Target: Raspberry Pi OS Desktop on Wayland.
+# Launched from ~/.config/autostart/kiosk.desktop or a systemd service.
+# (~/.bashrc is NOT read by either, so the display vars are set here.)
 #
 
-# Wait for Next.js to start
-sleep 10
+set -u
 
-# Disable screen blanking and power management
-xset s off         # Disable screen saver
-xset -dpms         # Disable DPMS (Display Power Management)
-xset s noblank     # Don't blank screen
+URL="http://127.0.0.1:3000"
 
-# Hide cursor when idle (uncomment if desired)
-# Requires: sudo apt install unclutter
-# unclutter -idle 0.1 &
+# Wayland display environment. Already present when launched from the desktop
+# session; set explicitly here so a systemd launch also works.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export MOZ_ENABLE_WAYLAND=1   # run Firefox natively on Wayland, not XWayland
 
-# Start Chromium in kiosk mode
-chromium-browser \
-  --kiosk \
-  --disable-restore-session-state \
-  --no-first-run \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
-  --disable-translate \
-  --noerrdialogs \
-  --check-for-update-interval=31536000 \
-  --touch-events=enabled \
-  --disable-pinch \
-  --overscroll-history-navigation=0 \
-  http://localhost:3000
+# Wait for the Next.js app to respond (up to ~60s) instead of a blind sleep.
+for _ in $(seq 1 30); do
+  curl -sf -o /dev/null "$URL" && break
+  sleep 2
+done
+
+exec firefox --kiosk "$URL"
