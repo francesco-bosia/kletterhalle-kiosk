@@ -1,6 +1,7 @@
 'use client';
 
 import { useWizard } from '@/lib/wizard-context';
+import { LAST_SHOPPING_STEP } from '@/lib/wizard';
 import { DeviceFrame } from '@/components/wizard/DeviceFrame';
 import { StepHeader } from '@/components/wizard/StepHeader';
 import { StepFooter } from '@/components/wizard/StepFooter';
@@ -9,6 +10,7 @@ import { Step2Shoes } from '@/components/wizard/Step2Shoes';
 import { Step3Summary } from '@/components/wizard/Step3Summary';
 import { Step4Payment } from '@/components/wizard/Step4Payment';
 import { IdleWatcher } from '@/components/wizard/IdleWatcher';
+import { PenaltyScreen } from '@/components/wizard/PenaltyScreen';
 
 export function WizardChrome() {
   const { state } = useWizard();
@@ -20,6 +22,8 @@ export function WizardChrome() {
       <main className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
         {state.phase === 'success' ? (
           <Step4Payment />
+        ) : state.view === 'penalty' && state.step <= LAST_SHOPPING_STEP ? (
+          <PenaltyScreen />
         ) : (
           <>
             {state.step === 1 && <Step1Tickets />}

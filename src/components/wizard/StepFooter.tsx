@@ -1,15 +1,16 @@
 'use client';
 
 import { useWizard } from '@/lib/wizard-context';
+import { LAST_SHOPPING_STEP } from '@/lib/wizard';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
 
 export function StepFooter() {
   const { state, dispatch } = useWizard();
-  const { step, cart } = state;
+  const { step, cart, view } = state;
 
   const total = cartTotal(cart);
-  const isContinueDisabled = step === 1 && total === 0;
+  const isContinueDisabled = (step === 1 && total === 0) || (view === 'penalty' && total === 0);
 
   // Bilingual button labels — Italian primary (top), English secondary (below)
   const buttonLabels = {
@@ -23,7 +24,8 @@ export function StepFooter() {
 
   function handleContinue() {
     if (isContinueDisabled) return;
-    const nextStep = (step + 1) as 1 | 2 | 3 | 4;
+    const nextStep =
+      view === 'penalty' && step <= LAST_SHOPPING_STEP ? 3 : ((step + 1) as 1 | 2 | 3 | 4);
     dispatch({ type: 'GO_TO_STEP', step: nextStep });
   }
 

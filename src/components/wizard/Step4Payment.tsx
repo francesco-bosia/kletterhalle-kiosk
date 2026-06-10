@@ -3,7 +3,8 @@
 import { useCallback, useRef } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { useTerminal } from '@/components/terminal-provider';
-import { toPaymentsCreatePayload } from '@/lib/cart';
+import { toPaymentsCreatePayload, toPrintPayload, toTransactionLogPayload } from '@/lib/cart';
+import { completePayment, stashPendingCompletion } from '@/lib/completion-client';
 
 import { t } from '@/lib/i18n';
 import { Step4Success } from '@/components/wizard/Step4Success';
@@ -80,10 +81,24 @@ export function Step4Payment() {
         return;
       }
 
-      // 5. Success
-      dispatch({
-        type: 'PAYMENT_SUCCEEDED',
-        transactionId: processResult.paymentIntent.id,
+      // 5. Success — show the success screen, then fire the local completion
+      // side-effects (print receipt + log transaction). Fire-and-forget: these
+      // never throw, so a printer/log problem cannot disrupt the success UI.
+      // The cart is still in memory here (PAYMENT_SUCCEEDED does not clear it;
+      // RESET_SESSION does).
+      const transactionId = processResult.paymentIntent.id;
+      dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId });
+      completePayment({
+        print: toPrintPayload(cart, {
+          transactionId,
+          paymentMethod: lang === 'it' ? 'Carta' : 'Card',
+          lang,
+        }),
+        log: toTransactionLogPayload(cart, {
+          paymentMethod: 'card',
+          lang,
+          stripeIds: { paymentIntent: transactionId },
+        }),
       });
     } catch (err) {
       dispatch({
@@ -122,8 +137,24 @@ export function Step4Payment() {
         return;
       }
 
-      // Redirect to Stripe Checkout for TWINT payment
+      // Redirect to Stripe Checkout for TWINT payment.
+      // The external redirect wipes the SPA state (and the in-memory cart),
+      // so stash the completion payload in localStorage now; WizardRoot
+      // replays it (print + log) on return to /?twint_return=true. The
+      // Checkout session id is a stable, unique id for the receipt/log.
       if (data.checkoutUrl) {
+        stashPendingCompletion({
+          print: toPrintPayload(cart, {
+            transactionId: data.sessionId ?? 'twint',
+            paymentMethod: 'TWINT',
+            lang,
+          }),
+          log: toTransactionLogPayload(cart, {
+            paymentMethod: 'twint',
+            lang,
+            stripeIds: { checkoutSession: data.sessionId },
+          }),
+        });
         window.location.href = data.checkoutUrl;
       } else {
         dispatch({

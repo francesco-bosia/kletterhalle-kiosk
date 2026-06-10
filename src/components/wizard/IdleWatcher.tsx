@@ -113,63 +113,19 @@ export function IdleWatcher() {
   const lang = state.lang;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          padding: '48px 40px',
-          maxWidth: '480px',
-          width: '90%',
-          textAlign: 'center',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <h2
-          style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            marginBottom: '16px',
-            color: '#1a1a1a',
-          }}
-        >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+      <div className="w-[90%] max-w-md rounded-2xl bg-white px-10 py-12 text-center shadow-2xl">
+        <h2 className="mb-4 text-3xl font-bold tracking-tight text-black">
           {t('idle.title', lang)}
         </h2>
 
-        <p
-          style={{
-            fontSize: '18px',
-            color: '#555',
-            marginBottom: '32px',
-            lineHeight: 1.5,
-          }}
-        >
+        <p className="mb-8 text-lg leading-relaxed text-gray-500">
           {t('idle.message', lang)}
         </p>
 
         <button
           onClick={handleConfirm}
-          style={{
-            fontSize: '20px',
-            fontWeight: 600,
-            padding: '16px 48px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: '#2563eb',
-            color: '#ffffff',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s',
-          }}
+          className="rounded-xl bg-black px-12 py-4 text-xl font-semibold text-white transition-colors hover:bg-gray-800 active:bg-gray-700"
         >
           {t('idle.confirm', lang)}
         </button>
