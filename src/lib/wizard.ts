@@ -2,6 +2,9 @@ import type { Dispatch } from 'react';
 import type { Lang } from './i18n';
 import { cartReducer, type CartLine, type CartAction } from './cart';
 
+/** Highest wizard step that is still "shopping" (before the summary at step 3). */
+export const LAST_SHOPPING_STEP = 2;
+
 // ── State type ─────────────────────────────────────────────────────────────────
 
 export interface WizardState {

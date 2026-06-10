@@ -1,6 +1,7 @@
 'use client';
 
 import { useWizard } from '@/lib/wizard-context';
+import { LAST_SHOPPING_STEP } from '@/lib/wizard';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
 
@@ -24,7 +25,7 @@ export function StepFooter() {
   function handleContinue() {
     if (isContinueDisabled) return;
     const nextStep =
-      view === 'penalty' && step < 3 ? 3 : ((step + 1) as 1 | 2 | 3 | 4);
+      view === 'penalty' && step <= LAST_SHOPPING_STEP ? 3 : ((step + 1) as 1 | 2 | 3 | 4);
     dispatch({ type: 'GO_TO_STEP', step: nextStep });
   }
 
