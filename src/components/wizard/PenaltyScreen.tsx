@@ -89,7 +89,7 @@ export function PenaltyScreen() {
         onClick={() => dispatch({ type: 'EXIT_PENALTY' })}
         className="mt-4 w-full text-center text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
       >
-        In dietro
+        Indietro
         <br />
         <span className="text-xs">Back</span>
       </button>
