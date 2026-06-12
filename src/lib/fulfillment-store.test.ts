@@ -58,4 +58,14 @@ describe('FulfillmentStore', () => {
     expect(await store.isDone('pi_1')).toBe(false);
     expect(await store.needsAttention('pi_1')).toBe(true);
   });
+
+  it('markNeedsAttention is safe on an unclaimed id', async () => {
+    await store.markNeedsAttention('pi_never', 'orphaned');
+    expect(await store.needsAttention('pi_never')).toBe(true);
+    expect(await store.claim('pi_never')).toBe('needs-attention');
+  });
+
+  it('rejects ids that are not stripe-shaped', async () => {
+    await expect(store.claim('../../etc/passwd')).rejects.toThrow(/Invalid fulfillment id/);
+  });
 });

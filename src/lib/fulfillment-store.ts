@@ -38,7 +38,14 @@ export class FulfillmentStore {
     return path.join(this.dir, `${id}.needs-attention`);
   }
 
+  private assertValidId(id: string): void {
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+      throw new Error(`Invalid fulfillment id: ${id}`);
+    }
+  }
+
   async isDone(id: string): Promise<boolean> {
+    this.assertValidId(id);
     try {
       await fs.access(this.donePath(id));
       return true;
@@ -48,6 +55,7 @@ export class FulfillmentStore {
   }
 
   async needsAttention(id: string): Promise<boolean> {
+    this.assertValidId(id);
     try {
       await fs.access(this.attentionPath(id));
       return true;
@@ -58,6 +66,7 @@ export class FulfillmentStore {
 
   /** Permanent failure: park the id so the sweep stops retrying it. */
   async markNeedsAttention(id: string, reason: string): Promise<void> {
+    this.assertValidId(id);
     await fs.mkdir(this.dir, { recursive: true });
     await fs.writeFile(
       this.attentionPath(id),
@@ -67,6 +76,7 @@ export class FulfillmentStore {
   }
 
   async claim(id: string): Promise<ClaimResult> {
+    this.assertValidId(id);
     await fs.mkdir(this.dir, { recursive: true });
     if (await this.isDone(id)) return 'already-done';
     if (await this.needsAttention(id)) return 'needs-attention';
@@ -77,8 +87,23 @@ export class FulfillmentStore {
       return 'claimed';
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
-      const stat = await fs.stat(this.claimPath(id));
+      const stat = await fs.stat(this.claimPath(id)).catch((e: NodeJS.ErrnoException) => {
+        if (e.code === 'ENOENT') return null; // released between write and stat
+        throw e;
+      });
+      if (!stat) {
+        // The claim was released in the race window — try once more as a fresh claim.
+        try {
+          await fs.writeFile(this.claimPath(id), new Date().toISOString(), { flag: 'wx' });
+          return 'claimed';
+        } catch (e) {
+          if ((e as NodeJS.ErrnoException).code === 'EEXIST') return 'in-progress';
+          throw e;
+        }
+      }
       if (Date.now() - stat.mtimeMs > STALE_CLAIM_MS) {
+        // Intentional overwrite: two concurrent claims on a stale file are acceptable
+        // (at-least-once bias: reprint > skip). 'wx' would incorrectly EEXIST here.
         await fs.writeFile(this.claimPath(id), new Date().toISOString());
         return 'claimed';
       }
@@ -87,10 +112,15 @@ export class FulfillmentStore {
   }
 
   async markDone(id: string): Promise<void> {
-    await fs.rename(this.claimPath(id), this.donePath(id));
+    this.assertValidId(id);
+    await fs.rename(this.claimPath(id), this.donePath(id)).catch((e: NodeJS.ErrnoException) => {
+      if (e.code === 'ENOENT') throw new Error(`markDone: no active claim for ${id}`);
+      throw e;
+    });
   }
 
   async release(id: string): Promise<void> {
+    this.assertValidId(id);
     await fs.rm(this.claimPath(id), { force: true });
   }
 }
