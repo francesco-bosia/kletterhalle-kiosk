@@ -176,10 +176,10 @@ export interface TransactionLogPayload {
 }
 
 /**
- * Build the body for POST /api/transactions/log from the in-memory cart.
- * Item shape matches the route's TransactionLog interface
+ * Build the transaction-log payload from the in-memory cart.
+ * Item shape matches the TransactionLog interface in src/lib/transaction-log.ts
  * ({ ticketId, ticketName, quantity, price }) — do not rename these keys
- * without updating src/app/api/transactions/log/route.ts.
+ * without updating src/lib/transaction-log.ts.
  */
 export function toTransactionLogPayload(
   cart: CartLine[],

@@ -39,13 +39,13 @@ describe('toPrintPayload', () => {
 });
 
 describe('toTransactionLogPayload', () => {
-  it('emits items with the keys /api/transactions/log expects', () => {
+  it('emits items with the keys transaction-log.ts expects', () => {
     const payload = toTransactionLogPayload(cart, {
       paymentMethod: 'card',
       lang: 'it',
       stripeIds: { paymentIntent: 'pi_1' },
     });
-    // /api/transactions/log TransactionLog.items = {ticketId, ticketName, quantity, price}
+    // transaction-log.ts TransactionLog.items = {ticketId, ticketName, quantity, price}
     expect(payload.items[0]).toEqual({
       ticketId: 'adult',
       ticketName: 'Biglietto adulto',

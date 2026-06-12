@@ -89,7 +89,8 @@ After=network.target
 Type=simple
 User=francesco
 WorkingDirectory=/home/francesco/Documents/kletterhalle-kiosk
-ExecStart=/usr/bin/npm start
+# Loopback only: nothing on the LAN may reach the app (kiosk browser + Stripe redirect are local; WisePOS E is outbound-only)
+ExecStart=/usr/bin/npm start -- -H 127.0.0.1
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production

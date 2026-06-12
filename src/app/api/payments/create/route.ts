@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
         })),
         mode: 'payment',
-        success_url: `${baseUrl}/success?total=${computedTotal}`,
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/`,
         metadata: {
           cartData: JSON.stringify(items),
@@ -111,10 +111,7 @@ export async function POST(request: NextRequest) {
       console.error('Error message:', error.message);
     }
     return NextResponse.json(
-      {
-        error: 'Failed to create payment',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to create payment' },
       { status: 500 }
     );
   }

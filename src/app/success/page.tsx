@@ -1,99 +1,61 @@
-'use client';
+import { getStripe } from '@/lib/stripe';
+import { fulfillCheckoutSession } from '@/lib/fulfillment';
+import { RedirectHome } from './redirect-home';
 
-import { Suspense, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+export const dynamic = 'force-dynamic';
 
 /**
- * Inner component that uses useSearchParams — must be wrapped in Suspense.
+ * TWINT return page. Server-rendered: fulfillment (print + log) runs HERE,
+ * before the customer sees the page — the present customer gets their
+ * receipt immediately. If the customer never reaches this page, the
+ * reconcile sweep fulfills instead (Stripe Checkout fulfillment guidance:
+ * never rely on the success page alone).
+ *
+ * Copy MUST branch on outcome (review finding): never claim success for a
+ * failed print, an unpaid/expired session, or a garbage session id.
  */
-function SuccessRedirector() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default async function SuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session_id?: string }>;
+}) {
+  const { session_id: sessionId } = await searchParams;
 
-  useEffect(() => {
-    const total = searchParams.get('total') || '';
-    const targetUrl = total
-      ? `/?twint_return=true&total=${encodeURIComponent(total)}`
-      : '/?twint_return=true';
+  let outcome = 'invalid-session';
+  if (sessionId && sessionId.startsWith('cs_')) {
+    outcome = await fulfillCheckoutSession(getStripe(), sessionId);
+  }
 
-    router.replace(targetUrl);
-  }, [router, searchParams]);
+  // fulfilled / already-fulfilled → receipt is printing or printed
+  // pending / in-progress / failed → paid-or-processing; sweep finishes it
+  // not-payable / invalid-session  → no success claim
+  let title: string;
+  let detail: string;
+  if (outcome === 'fulfilled' || outcome === 'already-fulfilled') {
+    title = 'Pagamento riuscito! / Payment successful!';
+    detail = 'Ritira la ricevuta qui sotto. / Collect your receipt below.';
+  } else if (
+    outcome === 'pending' ||
+    outcome === 'in-progress' ||
+    outcome === 'failed' ||
+    outcome === 'needs-attention'
+  ) {
+    title = 'Pagamento in elaborazione… / Payment processing…';
+    detail =
+      'La ricevuta verrà stampata a breve. / Your receipt will print shortly.';
+  } else {
+    title = 'Pagamento non completato / Payment not completed';
+    detail =
+      'Nessun addebito confermato. Riprova al chiosco. / No confirmed charge. Please try again at the kiosk.';
+  }
 
   return (
     <div className="flex h-screen items-center justify-center">
+      <RedirectHome seconds={6} />
       <div className="text-center">
-        <svg
-          className="mx-auto h-8 w-8 animate-spin text-black"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-        <p className="mt-4 text-lg text-gray-600">
-          Pagamento riuscito, reindirizzamento...
-          <br />
-          Payment successful, redirecting...
-        </p>
+        <p className="text-2xl font-bold text-gray-900">{title}</p>
+        <p className="mt-4 text-lg text-gray-600">{detail}</p>
       </div>
     </div>
-  );
-}
-
-/**
- * Thin wrapper page that handles TWINT redirect returns.
- *
- * After a TWINT Checkout Session, Stripe redirects to
- * /success?total=... (the success_url configured on the session).
- * This page reads the params and redirects back to the main wizard
- * with twint_return=true&total=... so WizardRoot can pick it up.
- */
-export default function SuccessPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-center">
-            <svg
-              className="mx-auto h-8 w-8 animate-spin text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
-            <p className="mt-4 text-lg text-gray-600">
-              Pagamento riuscito, reindirizzamento...
-              <br />
-              Payment successful, redirecting...
-            </p>
-          </div>
-        </div>
-      }
-    >
-      <SuccessRedirector />
-    </Suspense>
   );
 }

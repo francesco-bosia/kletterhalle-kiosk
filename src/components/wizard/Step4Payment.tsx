@@ -3,8 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { useTerminal } from '@/components/terminal-provider';
-import { toPaymentsCreatePayload, toPrintPayload, toTransactionLogPayload } from '@/lib/cart';
-import { stashPendingCompletion } from '@/lib/completion-client';
+import { toPaymentsCreatePayload } from '@/lib/cart';
 
 import { t } from '@/lib/i18n';
 import { Step4Success } from '@/components/wizard/Step4Success';
@@ -43,7 +42,7 @@ export function Step4Payment() {
       if (!res.ok || data.error) {
         dispatch({
           type: 'PAYMENT_FAILED',
-          error: data.error || data.details || 'Failed to create payment',
+          error: data.error || 'Failed to create payment',
         });
         return;
       }
@@ -124,29 +123,15 @@ export function Step4Payment() {
       if (!res.ok || data.error) {
         dispatch({
           type: 'PAYMENT_FAILED',
-          error: data.error || data.details || 'Failed to create TWINT session',
+          error: data.error || 'Failed to create TWINT session',
         });
         return;
       }
 
-      // Redirect to Stripe Checkout for TWINT payment.
-      // The external redirect wipes the SPA state (and the in-memory cart),
-      // so stash the completion payload in localStorage now; WizardRoot
-      // replays it (print + log) on return to /?twint_return=true. The
-      // Checkout session id is a stable, unique id for the receipt/log.
+      // Redirect to Stripe Checkout. Fulfillment (print + log) is now fully
+      // server-side: the /success page fast-path or the reconcile sweep —
+      // nothing is stashed client-side anymore.
       if (data.checkoutUrl) {
-        stashPendingCompletion({
-          print: toPrintPayload(cart, {
-            transactionId: data.sessionId ?? 'twint',
-            paymentMethod: 'TWINT',
-            lang,
-          }),
-          log: toTransactionLogPayload(cart, {
-            paymentMethod: 'twint',
-            lang,
-            stripeIds: { checkoutSession: data.sessionId },
-          }),
-        });
         window.location.href = data.checkoutUrl;
       } else {
         dispatch({
