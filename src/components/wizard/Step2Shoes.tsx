@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { getGroupsForStep } from '@/lib/catalog';
 import { formatChf } from '@/lib/money';
@@ -12,15 +11,6 @@ export function Step2Shoes() {
   const groups = getGroupsForStep(2);
   const rentalGroup = groups.find((g) => g.layout === 'single-card');
   const product = rentalGroup?.products[0];
-
-  const handleSkip = useCallback(() => {
-    if (!product) return;
-    const existing = state.cart.find((l) => l.productId === product.id);
-    if (existing) {
-      dispatch({ type: 'SET', productId: product.id, quantity: 0 });
-    }
-    dispatch({ type: 'GO_TO_STEP', step: 3 });
-  }, [product, state.cart, dispatch]);
 
   if (!product) return null;
 
@@ -102,17 +92,6 @@ export function Step2Shoes() {
           />
         </div>
       </div>
-
-      {/* Skip link */}
-      <button
-        type="button"
-        onClick={handleSkip}
-        className="mt-4 w-full text-center text-sm text-gray-400 underline decoration-gray-300 transition-colors hover:text-gray-600"
-      >
-        No grazie, salta questo passo
-        <br />
-        <span className="text-xs">No thanks, skip this step</span>
-      </button>
     </div>
   );
 }
