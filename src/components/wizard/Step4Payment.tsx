@@ -4,7 +4,7 @@ import { useCallback, useRef } from 'react';
 import { useWizard } from '@/lib/wizard-context';
 import { useTerminal } from '@/components/terminal-provider';
 import { toPaymentsCreatePayload, toPrintPayload, toTransactionLogPayload } from '@/lib/cart';
-import { completePayment, stashPendingCompletion } from '@/lib/completion-client';
+import { stashPendingCompletion } from '@/lib/completion-client';
 
 import { t } from '@/lib/i18n';
 import { Step4Success } from '@/components/wizard/Step4Success';
@@ -81,25 +81,17 @@ export function Step4Payment() {
         return;
       }
 
-      // 5. Success — show the success screen, then fire the local completion
-      // side-effects (print receipt + log transaction). Fire-and-forget: these
-      // never throw, so a printer/log problem cannot disrupt the success UI.
-      // The cart is still in memory here (PAYMENT_SUCCEEDED does not clear it;
-      // RESET_SESSION does).
+      // 5. Success — show the success screen, then trigger server-side
+      // fulfillment (print + log). Fire-and-forget: the reconcile sweep
+      // retries if this call or the printer fails, so a hiccup here cannot
+      // lose the receipt or disrupt the success UI.
       const transactionId = processResult.paymentIntent.id;
       dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId });
-      completePayment({
-        print: toPrintPayload(cart, {
-          transactionId,
-          paymentMethod: lang === 'it' ? 'Carta' : 'Card',
-          lang,
-        }),
-        log: toTransactionLogPayload(cart, {
-          paymentMethod: 'card',
-          lang,
-          stripeIds: { paymentIntent: transactionId },
-        }),
-      });
+      void fetch('/api/fulfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: transactionId }),
+      }).catch((err) => console.error('Fulfill request failed:', err));
     } catch (err) {
       dispatch({
         type: 'PAYMENT_FAILED',
