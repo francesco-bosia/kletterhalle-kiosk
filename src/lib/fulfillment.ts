@@ -85,12 +85,14 @@ async function executeFulfillment(
   id: string,
   gate: () => Promise<FulfillmentGateResult>
 ): Promise<FulfillmentOutcome> {
-  const claim = await deps.store.claim(id);
-  if (claim === 'already-done') return 'already-fulfilled';
-  if (claim === 'in-progress') return 'in-progress';
-  if (claim === 'needs-attention') return 'needs-attention';
-
+  let claimed = false;
   try {
+    const claim = await deps.store.claim(id);
+    if (claim === 'already-done') return 'already-fulfilled';
+    if (claim === 'in-progress') return 'in-progress';
+    if (claim === 'needs-attention') return 'needs-attention';
+    claimed = true;
+
     const gateResult = await gate();
     if (!gateResult.ok) {
       await deps.store.release(id);
@@ -115,7 +117,7 @@ async function executeFulfillment(
       return 'needs-attention';
     }
     console.error(`Fulfillment failed for ${id} (will retry):`, err);
-    await deps.store.release(id);
+    if (claimed) await deps.store.release(id);
     return 'failed';
   }
 }

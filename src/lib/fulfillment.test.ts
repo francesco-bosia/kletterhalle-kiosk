@@ -129,6 +129,22 @@ describe('fulfillPaymentIntent', () => {
     await fulfillPaymentIntent(stripe, 'pi_1', deps);
     expect(print.mock.calls[0][0].total).toBe(ADULT_PRICE + 100);
   });
+
+  it('returns failed (no escaped throw) when the store claim errors', async () => {
+    const stripe = fakeStripe({});
+    const brokenStore = {
+      ...store,
+      claim: vi.fn(async () => { throw new Error('ENOSPC'); }),
+      release: vi.fn(async () => {}),
+      markDone: vi.fn(async () => {}),
+      markNeedsAttention: vi.fn(async () => {}),
+      isDone: vi.fn(async () => false),
+      needsAttention: vi.fn(async () => false),
+    } as unknown as FulfillmentStore;
+    const res = await fulfillPaymentIntent(stripe, 'pi_claimthrow', { store: brokenStore, print, log });
+    expect(res).toBe('failed');
+    expect(print).not.toHaveBeenCalled();
+  });
 });
 
 describe('fulfillCheckoutSession', () => {

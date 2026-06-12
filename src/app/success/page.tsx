@@ -1,5 +1,6 @@
 import { getStripe } from '@/lib/stripe';
 import { fulfillCheckoutSession } from '@/lib/fulfillment';
+import type { FulfillmentOutcome } from '@/lib/fulfillment';
 import { RedirectHome } from './redirect-home';
 
 export const dynamic = 'force-dynamic';
@@ -21,9 +22,13 @@ export default async function SuccessPage({
 }) {
   const { session_id: sessionId } = await searchParams;
 
-  let outcome = 'invalid-session';
+  let outcome: FulfillmentOutcome | 'invalid-session' = 'invalid-session';
   if (sessionId && sessionId.startsWith('cs_')) {
-    outcome = await fulfillCheckoutSession(getStripe(), sessionId);
+    try {
+      outcome = await fulfillCheckoutSession(getStripe(), sessionId);
+    } catch {
+      outcome = 'failed'; // disk/store error → show processing; sweep retries
+    }
   }
 
   // fulfilled / already-fulfilled → receipt is printing or printed
@@ -33,7 +38,7 @@ export default async function SuccessPage({
   let detail: string;
   if (outcome === 'fulfilled' || outcome === 'already-fulfilled') {
     title = 'Pagamento riuscito! / Payment successful!';
-    detail = 'Ritira la ricevuta qui sotto. / Collect your receipt below.';
+    detail = 'La ricevuta sta stampando. / Your receipt is printing.';
   } else if (
     outcome === 'pending' ||
     outcome === 'in-progress' ||
