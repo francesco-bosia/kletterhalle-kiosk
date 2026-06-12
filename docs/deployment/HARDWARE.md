@@ -19,8 +19,8 @@ The kiosk system requires three main hardware components:
 | Criteria | Assessment |
 |----------|------------|
 | Stripe compatibility | Pre-certified, fully supported in Switzerland |
-| Ease of connection | WiFi/Ethernet - connects to any device on same network |
-| Ease of implementation | Codebase uses `@stripe/terminal-js` SDK |
+| Ease of connection | WiFi/Ethernet - needs internet only, no LAN with kiosk required |
+| Ease of implementation | Server-driven Terminal (`process_payment_intent`), no browser SDK |
 | Confidence in working system | Stripe-manufactured, widely deployed |
 | No recurring costs | One-time purchase from Stripe Dashboard |
 

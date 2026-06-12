@@ -7,12 +7,12 @@ import { headers } from 'next/headers';
  *
  * Verifies Stripe webhook signatures and logs received events.
  *
- * NOTE: Printing and transaction logging are handled CLIENT-SIDE on the kiosk
- * (see src/components/wizard/* + src/lib/completion-client.ts). The webhook
- * cannot reach the kiosk's local /api/print or /api/transactions/log, and
- * doing those here would double-print/double-log if the Pi ever becomes
- * webhook-reachable. Stripe object metadata (set in /api/payments/create) is
- * the durable cloud record.
+ * NOTE: Printing and transaction logging are handled SERVER-SIDE by the
+ * fulfillment engine (src/lib/fulfillment.ts) — triggered from the /success
+ * page fast-path or the reconcile sweep. The webhook handler is intentionally
+ * kept minimal: fulfillment from here would race with the fast-path and risk
+ * double-printing if the Pi ever becomes webhook-reachable. Stripe object
+ * metadata (set in /api/payments/create) is the durable cloud record.
  *
  * Events observed:
  * - checkout.session.completed: TWINT payments via Checkout

@@ -11,11 +11,8 @@ function getStripeClient(): Stripe {
     throw new Error('STRIPE_SECRET_KEY environment variable is not set');
   }
 
-  // Check if using test key (starts with sk_test_)
-  const isTestMode = secretKey.startsWith('sk_test_');
-
   return new Stripe(secretKey, {
-    apiVersion: '2026-01-28.clover' as const,
+    apiVersion: '2026-05-27.dahlia' as const,
     typescript: true,
   });
 }

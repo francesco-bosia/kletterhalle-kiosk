@@ -62,6 +62,22 @@ const MESSAGES = {
     processing: { it: 'Elaborazione in corso...', en: 'Processing...' },
     tapCard: { it: 'Avvicina la carta al lettore', en: 'Tap your card on the reader' },
     waitingPayment: { it: 'In attesa del pagamento...', en: 'Waiting for payment...' },
+    readerConnected: { it: 'Lettore pronto', en: 'Reader ready' },
+    readerUnavailable: {
+      it: 'Lettore carte non disponibile. Usa TWINT o chiedi assistenza.',
+      en: 'Card reader unavailable. Use TWINT or ask for assistance.',
+    },
+    checkingReader: { it: 'Verifica del lettore...', en: 'Checking reader...' },
+    startPayment: { it: 'Avvia pagamento', en: 'Start payment' },
+    declined: {
+      it: 'Carta rifiutata. Riprova o usa un’altra carta.',
+      en: 'Card declined. Try again or use another card.',
+    },
+    terminalError: {
+      it: 'Errore del terminale di pagamento. Riprova.',
+      en: 'Payment terminal error. Please try again.',
+    },
+    cancelCountdown: { it: 'Annulla', en: 'Cancel' },
   },
   idle: {
     title: { it: 'Sei ancora qui?', en: 'Still there?' },
@@ -81,6 +97,7 @@ const MESSAGES = {
   failed: {
     title: { it: 'Pagamento fallito', en: 'Payment failed' },
     retry: { it: 'Riprova', en: 'Retry' },
+    changeMethod: { it: 'Cambia metodo di pagamento', en: 'Choose another method' },
     errorMessage: { it: 'Si è verificato un errore. Riprova.', en: 'An error occurred. Please try again.' },
   },
   cart: {

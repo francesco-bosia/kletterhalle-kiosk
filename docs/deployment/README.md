@@ -71,7 +71,8 @@ The `scripts/` directory contains:
 - [ ] Next.js app auto-starts
 - [ ] Touch display responsive
 - [ ] Printer works from Raspberry Pi
-- [ ] Card reader connects to Raspberry Pi WiFi
+- [ ] `STRIPE_TERMINAL_READER_ID` set to reader's `tmr_…` id in `.env.local`
+- [ ] Card reader shows **online** in Stripe Dashboard
 - [ ] System recovers from power loss
 
 ## Troubleshooting
@@ -85,10 +86,10 @@ sudo usermod -a -G lp $USER
 # Log out and back in
 ```
 
-**Card reader not connecting:**
-- Verify reader and kiosk are on same WiFi network
-- Check `STRIPE_TERMINAL_LOCATION_ID` in `.env.local`
-- Check Stripe Dashboard for reader registration
+**Card reader not responding:**
+- Verify reader is powered on and has internet access
+- Check Stripe Dashboard — reader must show **online** under Terminal → Readers
+- Verify `STRIPE_TERMINAL_READER_ID` in `.env.local` matches the reader's `tmr_…` id
 
 **Application not starting:**
 ```bash
@@ -99,6 +100,39 @@ journalctl -u kletterhalle.service -f
 **Display issues:**
 - Check `/boot/firmware/config.txt` for correct display settings
 - Run `xinput_calibrator` to calibrate touch
+
+### Payment fulfillment & receipt recovery
+
+Receipts and the transaction log are produced server-side by the fulfillment
+engine, not by the browser. Every paid payment is fulfilled either by the
+synchronous fast-path (card: the kiosk calls `/api/fulfill` right after the
+reader approves; TWINT: the server-rendered `/success` page) **or**, if that
+path is interrupted, by a reconciliation sweep that polls Stripe roughly every
+60 seconds. This means a paid-but-unprinted payment — printer out of paper, an
+abandoned TWINT redirect, a brief reboot — is **auto-recovered within ~60s**
+once the kiosk is healthy again. The sweep runs in-process (started from
+`src/instrumentation.ts`); the poll interval is overridable with
+`FULFILL_RECONCILE_INTERVAL_MS`.
+
+- **Force a sweep now:** `curl -X POST http://127.0.0.1:3000/api/fulfill/reconcile`
+  (returns `{attempted, fulfilled}`, or `{skipped:true}` if one is already running).
+- **Fulfillment markers** live in `data/fulfilled/` (gitignored):
+  - `<stripeId>.done` — fulfilled successfully.
+  - `<stripeId>.needs-attention` — **paid but could not be fulfilled** (e.g. a
+    product id was removed from the catalog after the sale). The sweep will not
+    retry these. Open the file to read the reason, then resolve manually
+    (reprint by hand or refund). Glance for `.needs-attention` files when
+    reconciling the till.
+
+**Loopback binding (security):** the app now starts with `-H 127.0.0.1`, so the
+Next.js server is reachable only from the Pi itself — the kiosk browser, the
+TWINT redirect, and the reader flow are all local or outbound, and the LAN
+cannot reach the payment/print/fulfillment routes. To reach the app from your
+laptop for debugging, use an SSH port-forward:
+```bash
+ssh -L 3000:127.0.0.1:3000 pi@<kiosk-host>
+# then open http://localhost:3000 on your laptop
+```
 
 ## Support
 
