@@ -15,6 +15,8 @@ export function Step1Tickets() {
       <StepTitle
         it="Scegli i biglietti"
         en="Choose your tickets"
+        descriptionIt="Hai un abbonamento? Premi «Continua» per andare alle scarpette."
+        descriptionEn="Have a season ticket? Tap 'Continue' to go to shoes."
         onSecretActivate={() => dispatch({ type: 'ENTER_PENALTY' })}
       />
 
