@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWizard } from '@/lib/wizard-context';
+import { cartTotal } from '@/lib/cart';
 import { t } from '@/lib/i18n';
 
 type IdlePhase = 'armed' | 'prompting';
@@ -54,10 +55,15 @@ export function IdleWatcher() {
     startIdleTimer();
   }, [startIdleTimer]);
 
+  // A virgin session — empty cart on the tickets step in the normal view — has
+  // nothing to reset, so the idle prompt would just nag a kiosk no one is using.
+  const isVirgin =
+    state.view === 'normal' && state.step === 1 && cartTotal(state.cart) === 0;
+
   // Main effect: set up the idle timer and pointer listener when not on step 4
   useEffect(() => {
-    // Disable idle timer during payment step
-    if (state.step === 4) {
+    // Disable idle timer during payment (step 4) or while the session is virgin
+    if (state.step === 4 || isVirgin) {
       clearTimers();
       // Use a timeout to avoid synchronous setState in effect body
       const t = setTimeout(() => setPhase('armed'), 0);
@@ -85,7 +91,7 @@ export function IdleWatcher() {
       document.removeEventListener('pointerdown', handlePointerDown);
       clearTimers();
     };
-  }, [state.step, clearTimers, startIdleTimer, resetAndArm]);
+  }, [state.step, isVirgin, clearTimers, startIdleTimer, resetAndArm]);
 
   // Separate effect: manage the prompt (auto-reset) timer
   useEffect(() => {
