@@ -1,362 +1,282 @@
 # Raspberry Pi Kiosk Setup
 
-Complete guide for setting up the Kletterhalle Kiosk on a Raspberry Pi 5.
+Complete guide for setting up the Kletterhalle Kiosk on a Raspberry Pi 5 running
+**Raspberry Pi OS (Bookworm, 64-bit, Desktop)** — a **Wayland** session
+(`labwc` compositor) with **Firefox** in kiosk mode.
+
+> **Conventions used below.** The running kiosk uses user `francesco`, host
+> `kletterhalle`, and the repo lives at `~/Documents/kletterhalle-kiosk`. Adjust
+> if yours differ — but note the systemd unit `kletterhalle.service` hard-codes
+> `User=francesco` and that `WorkingDirectory`, so changing them means editing
+> `scripts/kletterhalle.service` too.
+
+## Architecture at a glance
+
+| Component                | Unit / mechanism                          | Type   | Started by                                  |
+| ------------------------ | ----------------------------------------- | ------ | ------------------------------------------- |
+| Next.js server (`:3000`) | `kletterhalle.service`                    | system | systemd at boot (`multi-user.target`)       |
+| Firefox kiosk            | `kiosk-browser.service` (`scripts/kiosk.sh`) | user   | **labwc autostart hook** on desktop login   |
+
+Two things worth internalising before you start:
+
+- **The server is loopback-only.** It binds `127.0.0.1:3000`; nothing on the LAN
+  can reach it. The kiosk browser and the Stripe redirect are local; the WisePOS
+  E reader is outbound-only (see *Card reader* below).
+- **The browser is NOT started by a systemd target.** Raspberry Pi OS's Wayland
+  session does not activate the user `graphical-session.target`, so a
+  `WantedBy=graphical-session.target` unit would never fire. Instead the labwc
+  autostart hook (`~/.config/labwc/autostart`) runs
+  `systemctl --user start kiosk-browser.service` once the Wayland socket is up.
+  The unit keeps `Restart=always` for supervision but has no `[Install]` section.
 
 ## Hardware Assembly
 
 ### Raspberry Pi 5 + Official 7" Touch Display
 
-1. Connect the DSI ribbon cable from display to Pi's DSI port (between USB-C power and mini HDMI)
-2. Connect display power cable to Pi's GPIO header (pins 2, 6 for 5V and GND)
-3. Mount Pi to back of display using included screws
-4. Insert microSD card
+1. Connect the DSI ribbon cable from display to the Pi's DSI port (between USB-C power and mini HDMI)
+2. Connect display power cable to the Pi's GPIO header (pins 2, 6 for 5V and GND)
+3. Mount Pi to the back of the display using the included screws
+4. Insert the microSD card
 
 ### Alternative: External HDMI Touch Display
 
-- Use HDMI cable to connect display
+- Use an HDMI cable to connect the display
 - USB cable from display to Pi for touch input
 
 ## Install Raspberry Pi OS
 
-### Step 1: Flash OS to microSD
+Use **Raspberry Pi Imager** (https://www.raspberrypi.com/software/) and pick
+**Raspberry Pi OS (64-bit)** with Desktop. In the Imager's *OS customisation*
+settings (gear icon) you can preconfigure everything headless:
 
-On your laptop:
+- **Hostname:** `kletterhalle`
+- **Username/password:** `francesco` / your password
+- **Wireless LAN:** SSID + password, country `CH`
+- **Enable SSH:** password or public-key auth
+- **Locale/timezone:** as appropriate
 
-```bash
-# Download Raspberry Pi Imager from: https://www.raspberrypi.com/software/
-# Or use dd on Linux:
-
-# Insert microSD, find device
-lsblk
-
-# Flash Raspberry Pi OS with Desktop (64-bit)
-# Download from: https://www.raspberrypi.com/software/operating-systems/
-sudo dd if=2024-xx-xx-raspios-bookworm-arm64.img of=/dev/sdX bs=4M status=progress conv=fsync
-```
-
-### Step 2: Enable SSH (headless setup)
-
-Create empty file on boot partition:
-
-```bash
-touch /boot/ssh
-```
-
-### Step 3: Configure WiFi (headless)
-
-Create `/boot/wpa_supplicant.conf`:
-
-```conf
-country=CH
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-
-network={
-    ssid="YOUR_WIFI_NAME"
-    psk="YOUR_WIFI_PASSWORD"
-}
-```
+That removes the need for the old `/boot/ssh` and `wpa_supplicant.conf` files.
+Flash, insert the card, and boot the Pi.
 
 ## First Boot & Display Setup
 
-### Step 1: Connect via SSH
+### Connect via SSH
 
 ```bash
-ssh pi@raspberrypi.local
-# Default password: raspberry
+ssh francesco@kletterhalle.local
 ```
 
-### Step 2: Update System
+(If you use Tailscale, you can also reach it by its Tailscale name/IP from
+anywhere — see *Remote access & screen mirroring* below.)
+
+### Configure boot behaviour with raspi-config
 
 ```bash
-sudo apt update && sudo apt full-upgrade -y
 sudo raspi-config
 ```
 
-### Step 3: Configure Display in raspi-config
+- `1 System Options` → `Boot / Auto Login` → **Desktop Autologin**
+  (so the desktop session — and therefore the kiosk browser — comes up without a
+  physical login after a reboot/power loss).
+- `3 Interface Options` → `I2C` → Enable (for touch, if required by your panel).
 
-Navigate the menu:
+### Display orientation / splash (optional)
 
-1. `3 Interface Options` > `I2C` > Enable (for touch)
-2. `3 Interface Options` > `SPI` > Enable (for some displays)
-3. `2 Display Options` > `VNC Resolution` > Set to display resolution
-4. `1 System Options` > `Boot / Auto Login` > `Desktop Autologin`
+Edit `/boot/firmware/config.txt` if you need rotation or want to hide the splash.
+`scripts/setup-pi.sh` already appends `disable_splash=1` and `boot_delay=0`.
 
-### Step 4: Configure Display (Official 7" DSI)
-
-Edit `/boot/firmware/config.txt`:
-
-```bash
-sudo nano /boot/firmware/config.txt
-```
-
-Add/modify:
+For the official 7" DSI panel:
 
 ```ini
-# Display settings
-display_lcd_rotate=2          # Rotate 180° if needed (0, 1, 2, 3)
-lcd_framerate=60
-disable_splash=1              # Disable rainbow splash
+# Rotate 180° if mounted upside-down (use the Wayland display settings GUI for
+# finer control, or a compositor-level transform).
+disable_splash=1
 ```
 
-### Step 5: Configure Display (HDMI Touch Display)
+For an HDMI panel, set `hdmi_*` options as needed for your resolution.
 
-Edit `/boot/firmware/config.txt`:
+## Provision the kiosk
 
-```ini
-# Force HDMI output
-hdmi_force_hotplug=1
-hdmi_drive=2                  # Force HDMI mode
-
-# Set resolution (adjust to your display)
-hdmi_group=2
-hdmi_mode=82                  # 1920x1080 @ 60Hz
-
-# Rotate display if needed
-display_hdmi_rotate=2         # 0=0, 1=90, 2=180, 3=270
-```
-
-### Step 6: Calibrate Touch
+The whole provisioning flow lives in `scripts/`. Clone the repo, then run the
+orchestrator.
 
 ```bash
-# Install touchscreen calibration tool
-sudo apt install xinput-calibrator
-
-# Run calibration from desktop
-xinput_calibrator
-
-# Follow on-screen instructions
-# Save output to: /etc/X11/xorg.conf.d/99-calibration.conf
+# Clone to the expected path
+mkdir -p ~/Documents && cd ~/Documents
+git clone <repo-url> kletterhalle-kiosk
+cd kletterhalle-kiosk
 ```
 
-### Step 7: Reboot and Verify
+### One command: `setup-pi.sh`
+
+```bash
+./scripts/setup-pi.sh
+```
+
+This does base provisioning (apt update, Node, `firefox-esr`, `git`, add user to
+the `lp` group for the printer, display settings) and then **delegates** to two
+focused scripts:
+
+- **`scripts/harden-pi.sh`** — firewall: `ufw` allowing SSH and loopback-only
+  `:3000`, nothing else.
+- **`scripts/setup-systemd.sh`** — creates stable `/usr/local/bin/{node,npm}`
+  symlinks, installs both service units, and adds the labwc autostart hook.
+
+You can also run those two standalone (both are idempotent), e.g. to re-apply
+just the systemd setup after a Node upgrade.
+
+> **Node lives under nvm.** This Pi's Node is an **nvm** install
+> (`~/.nvm/versions/node/vX.Y.Z/bin`). A systemd unit pointing at `/usr/bin/npm`
+> fails with `status=203/EXEC`. `setup-systemd.sh` solves this by symlinking
+> `/usr/local/bin/node` and `/usr/local/bin/npm` to whatever Node is currently on
+> PATH, and `kletterhalle.service` uses those symlinks plus
+> `Environment=PATH=/usr/local/bin:…` (npm's `#!/usr/bin/env node` shebang needs
+> `node` on PATH). **On a Node upgrade, just re-run `./scripts/setup-systemd.sh`**
+> to re-point the symlinks — the unit never changes.
+
+### Environment file
+
+The Pi keeps its **own** `.env.local` (it is git-ignored and never overwritten by
+a deploy). It must contain the live values:
+
+```bash
+# ~/Documents/kletterhalle-kiosk/.env.local  (see .env.local.example)
+STRIPE_SECRET_KEY=sk_live_…
+STRIPE_WEBHOOK_SECRET=whsec_…
+STRIPE_TERMINAL_READER_ID=tmr_…          # the physical live reader
+NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000
+# …printer config…
+```
+
+> `NEXT_PUBLIC_*` variables are baked into the client bundle **at build time**.
+> Because the kiosk **builds on the Pi** (next step), the Pi's `.env.local` is
+> read during `npm run build`, so `NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000`
+> ends up in the bundle correctly. (`npm run build:kiosk` pins that value
+> explicitly regardless of the env file, if you ever build elsewhere.)
+
+### Build & start
+
+```bash
+cd ~/Documents/kletterhalle-kiosk
+npm ci
+npm run build
+sudo systemctl restart kletterhalle      # if it wasn't already started by setup-systemd.sh
+```
+
+Verify the server:
+
+```bash
+curl -sf -o /dev/null http://127.0.0.1:3000 && echo OK
+```
+
+Then reboot so the desktop session starts the kiosk browser via the autostart
+hook:
 
 ```bash
 sudo reboot
 ```
 
-## Install Node.js & Dependencies
+After it comes back (autologin → desktop → labwc autostart), Firefox should open
+full-screen on `http://127.0.0.1:3000` on its own.
+
+## Updating the kiosk (deploy)
+
+`scripts/deploy.sh` is the day-to-day update path. It is safe to run over SSH and
+disconnect immediately — both services are supervised by systemd.
 
 ```bash
-# Install Node.js 20.x (required for Next.js 16)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Verify versions
-node --version   # Should be v20.x.x
-npm --version
-
-# Install Chromium for kiosk mode
-sudo apt install -y chromium-browser
-
-# Install other useful tools
-sudo apt install -y git vim ufw unclutter
+cd ~/Documents/kletterhalle-kiosk
+./scripts/deploy.sh
 ```
 
-## Configure Firewall
+It runs `git pull`, `npm ci`, `npm run build`, then
+`sudo systemctl restart kletterhalle` and
+`systemctl --user restart kiosk-browser`.
+
+## Remote access & screen mirroring (testing)
+
+You can watch the **live kiosk screen** from a remote laptop — useful for testing
+without standing at the Pi.
+
+### Enable the built-in VNC server (wayvnc)
+
+On Wayland Raspberry Pi OS the built-in VNC server is **wayvnc**, which *mirrors*
+the actual running session (you see exactly what's on the kiosk, same Firefox,
+same state — it does not create a separate virtual desktop).
 
 ```bash
-# Allow SSH (for maintenance)
-sudo ufw allow ssh
+# 0 = enable (raspi-config's nonint flips the logic)
+sudo raspi-config nonint do_vnc 0
 
-# Allow local access only (kiosk runs locally)
-sudo ufw allow from 127.0.0.1 to any port 3000
-
-# Enable firewall
-sudo ufw enable
+# confirm it's listening on :5900
+ss -tlnp | grep 5900
 ```
 
-## Deploy Application
+### Connect from your laptop (over Tailscale)
 
-### Step 1: Create Kiosk User (optional)
+The Pi and laptop are on the same tailnet, so connect a VNC viewer straight to
+the Pi's Tailscale name/IP — Tailscale (WireGuard) already encrypts the link, no
+SSH tunnel needed:
 
-```bash
-sudo useradd -m -s /bin/bash kiosk
-sudo usermod -a -G lp kiosk      # Printer access
-sudo usermod -a -G netdev kiosk  # WiFi access
+```
+<pi-tailscale-host>:5900
 ```
 
-### Step 2: Transfer Application
+- **On a WSL2 laptop:** run the VNC viewer on the **Windows** side (RealVNC
+  Viewer / TightVNC). Tailscale almost certainly runs on the Windows host, so
+  Windows can already reach the Pi by name; running the viewer inside WSL2 would
+  require mirrored networking (`networkingMode=mirrored` in `.wslconfig`) or a
+  separate Tailscale node in the distro, plus WSLg for the GUI — more friction
+  for no benefit.
 
-On your laptop:
+### Two caveats
 
-> **IMPORTANT:** `NEXT_PUBLIC_*` variables are baked into the JavaScript bundle
-> at build time — the Pi's `.env.local` has **no effect** on them at runtime.
-> Always build with `npm run build:kiosk` (which sets the kiosk's client-side
-> values explicitly); a plain `npm run build` produces a bundle with your
-> laptop's dev settings (Terminal simulator mode) regardless of what the Pi's
-> env file says.
-
-```bash
-# Build the application with the kiosk's client-side env baked in
-npm run build:kiosk
-
-# Copy to Raspberry Pi (NOT .env.local — the Pi keeps its own, with the
-# live Stripe key and printer config; don't overwrite it with dev settings)
-scp -r .next package.json package-lock.json pi@raspberrypi.local:~/kletterhalle-kiosk/
-
-# Or use rsync for updates:
-rsync -avz --exclude 'node_modules' --exclude '.env.local' ./ pi@raspberrypi.local:~/kletterhalle-kiosk/
-```
-
-### Step 3: Install Dependencies on Pi
-
-```bash
-cd ~/kletterhalle-kiosk
-npm install --production
-```
-
-## Configure Kiosk Mode
-
-### Step 1: Create Kiosk Script
-
-```bash
-mkdir -p ~/kiosk
-nano ~/kiosk/kiosk.sh
-```
-
-Paste:
-
-```bash
-#!/bin/bash
-# Wait for Next.js to start
-sleep 10
-
-# Disable screen blanking
-xset s off
-xset -dpms
-xset s noblank
-
-# Hide cursor (optional - uncomment if desired)
-# unclutter -idle 0.1 &
-
-# Start Chromium in kiosk mode
-chromium-browser \
-  --kiosk \
-  --disable-restore-session-state \
-  --no-first-run \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
-  --disable-translate \
-  --noerrdialogs \
-  --check-for-update-interval=31536000 \
-  --touch-events=enabled \
-  http://localhost:3000
-```
-
-### Step 2: Make Executable
-
-```bash
-chmod +x ~/kiosk/kiosk.sh
-```
-
-### Step 3: Auto-start on Desktop Login
-
-```bash
-mkdir -p ~/.config/autostart
-nano ~/.config/autostart/kiosk.desktop
-```
-
-Paste:
-
-```ini
-[Desktop Entry]
-Type=Application
-Name=Kiosk
-Exec=/home/pi/kiosk/kiosk.sh
-X-GNOME-Autostart-enabled=true
-```
-
-## Create Systemd Services
-
-### Step 1: Next.js Application Service
-
-```bash
-sudo nano /etc/systemd/system/kletterhalle.service
-```
-
-Paste:
-
-```ini
-[Unit]
-Description=Kletterhalle Next.js App
-After=network.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/kletterhalle-kiosk
-ExecStart=/usr/bin/npm start
-Restart=always
-RestartSec=10
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### Step 2: Enable Services
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable kletterhalle.service
-sudo systemctl start kletterhalle.service
-
-# Check status
-sudo systemctl status kletterhalle.service
-```
-
-### Step 3: Verify
-
-```bash
-curl http://localhost:3000
-```
+1. **A desktop session must be active** on the Pi's physical screen for there to
+   be anything to mirror (the same precondition as the kiosk browser). With
+   Desktop Autologin enabled, this is satisfied after boot.
+2. **wayvnc mirrors, it doesn't create** an output — you can't get a headless
+   desktop this way without an attached display (or a forced-output config).
 
 ## Connect & Test Hardware
 
-### Step 1: Connect USB Printer
+### USB thermal printer
 
 ```bash
-# Check printer is detected
+# Check the printer node is present
 ls -la /dev/usb/lp0
 
-# Add user to lp group
-sudo usermod -a -G lp $USER
-# Log out and back in
+# The user must be in the lp group (setup-pi.sh does this; re-login to apply)
+groups | tr ' ' '\n' | grep -x lp || echo "not in lp group yet — re-login"
 
-# Test printer
-echo "Test print" | sudo tee /dev/usb/lp0
+# Quick raw test
+echo "Test print" | tee /dev/usb/lp0
 ```
 
-### Step 2: Connect WisePOS E to WiFi and register it
+### Card reader (server-driven Terminal)
 
-1. Power on the reader
-2. Follow the on-screen WiFi setup (any network with internet access — the
-   reader does **not** need to share the Pi's LAN)
-3. In the Stripe Dashboard, go to **Terminal → Readers** and confirm the
-   reader shows **online** in the correct mode (test or live)
-4. Set `STRIPE_TERMINAL_READER_ID` in `/home/pi/kletterhalle-kiosk/.env.local`
-   to that reader's `tmr_…` id
+The kiosk drives the WisePOS E through Stripe's cloud (`process_payment_intent`
+on the reader). The reader and the kiosk **never talk over the local network** —
+the reader only needs working internet (any network). Requirements:
 
-## Card reader (server-driven Terminal)
-
-The kiosk drives the WisePOS E through Stripe's cloud
-(`process_payment_intent` on the reader). The reader and the kiosk never
-talk over the local network — the reader only needs working internet
-(any network). Requirements:
-
-- Reader registered to the account's Terminal location (Dashboard →
-  Terminal → Readers) **in the matching mode** (test/live).
-- `STRIPE_TERMINAL_READER_ID` set to that reader's `tmr_…` id on the Pi.
+- Reader registered to the account's Terminal location (Dashboard → Terminal →
+  Readers) **in the matching mode** (test/live).
+- `STRIPE_TERMINAL_READER_ID` set to that reader's `tmr_…` id in the Pi's
+  `.env.local`.
 - Reader shows "online" in the Dashboard.
 
-There is no same-network, local-DNS, or browser-permission requirement:
-this integration replaced the Terminal JS SDK in 2026-06 (see
-docs/superpowers/specs/2026-06-12-server-driven-terminal-design.md).
+There is no same-network, local-DNS, or browser-permission requirement: this
+integration replaced the Terminal JS SDK in 2026-06 (see
+`docs/superpowers/specs/2026-06-12-server-driven-terminal-design.md`).
 
-### One-time cleanup on already-provisioned Pis
+To set the reader up: power it on, follow the on-screen WiFi setup (any network
+with internet — it does **not** need the Pi's LAN), confirm it shows **online**
+in Terminal → Readers in the correct mode, then set `STRIPE_TERMINAL_READER_ID`
+to its `tmr_…` id.
 
-The old JS SDK integration required two local workarounds — remove them:
+#### One-time cleanup on already-provisioned Pis
+
+The old JS SDK integration required two local workarounds — remove them if
+present:
 
 ```bash
 # 1. hosts-file pin for the reader hostname
@@ -365,66 +285,78 @@ sudo sed -i '/stripe-terminal-local-reader\.net/d' /etc/hosts
 sudo rm -f /etc/firefox/policies/policies.json
 ```
 
-### Step 3: Verify Full Flow
+### Verify the full flow
 
-1. Open browser to `http://localhost:3000`
-2. Add tickets to cart
-3. Test payment with card reader
-4. Verify receipt prints
+1. Open (or mirror) the kiosk on `http://127.0.0.1:3000`
+2. Add tickets to the cart
+3. Run a payment on the card reader
+4. Confirm the receipt prints
 
 ## Power Loss Recovery
 
-The system automatically:
+With Desktop Autologin enabled, recovery is automatic:
 
-1. Boots to desktop (configured in raspi-config)
-2. Starts Next.js service (systemd)
-3. Launches kiosk browser (autostart desktop entry)
+1. Pi boots to the desktop session
+2. `kletterhalle.service` starts the Next.js server (systemd, `multi-user.target`)
+3. The labwc autostart hook starts `kiosk-browser.service`, which launches Firefox
 
-Test recovery:
+Test it:
 
 ```bash
 sudo reboot
-# Wait ~60 seconds for full boot
-# Kiosk should be running automatically
+# Wait ~60s; the kiosk should come up on its own.
 ```
 
 ## Troubleshooting
 
-### Display not working
+> Many checks below are **user** systemd services. Over SSH you must point at the
+> graphical user's manager first:
+>
+> ```bash
+> export XDG_RUNTIME_DIR=/run/user/$(id -u)
+> ```
+
+### Server won't start
 
 ```bash
-# Check display is detected
-tvservice -s
-# Or for DSI
-dmesg | grep -i dsi
+systemctl status kletterhalle --no-pager
+journalctl -u kletterhalle -n 50 --no-pager
 ```
 
-### Touch not working
+- **`status=203/EXEC`** → the `node`/`npm` path is wrong. Re-run
+  `./scripts/setup-systemd.sh` to (re)create the `/usr/local/bin/{node,npm}`
+  symlinks, then `sudo systemctl restart kletterhalle`.
+
+### Kiosk browser doesn't appear
 
 ```bash
-# List input devices
-xinput list
-# Check calibration
-cat /etc/X11/xorg.conf.d/99-calibration.conf
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+systemctl --user status kiosk-browser --no-pager
+journalctl --user -u kiosk-browser -n 50 --no-pager
+
+# Is the autostart hook present?
+grep kiosk-browser ~/.config/labwc/autostart || echo "hook missing — re-run setup-systemd.sh"
+
+# Start it manually to test (Firefox should appear on the screen / VNC mirror):
+systemctl --user start kiosk-browser
 ```
 
-### Application not starting
-
-```bash
-# Check service status
-sudo systemctl status kletterhalle.service
-
-# View logs
-journalctl -u kletterhalle.service -f
-```
+- If `inactive (dead)` with **no journal entries** after a desktop login, the
+  autostart hook didn't run — confirm the line in `~/.config/labwc/autostart`
+  and that the compositor is labwc (`pgrep -x labwc`). On **wayfire**, the hook
+  goes in `~/.config/wayfire.ini` under `[autostart]` instead.
 
 ### Printer permission denied
 
 ```bash
-# Check groups
-groups
+groups                       # check for 'lp'
+sudo usermod -a -G lp $USER  # then log out and back in
+```
 
-# Add to lp group if missing
-sudo usermod -a -G lp $USER
-# Log out and back in
+### Display / touch issues (Wayland)
+
+```bash
+# Inputs and outputs are managed by libinput/the compositor. Check kernel detection:
+dmesg | grep -i -E 'dsi|hdmi|edid'
+# Touch is usually plug-and-play on the official panel under Wayland.
 ```

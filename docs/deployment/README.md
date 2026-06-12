@@ -22,10 +22,17 @@ The `scripts/` directory contains:
 
 | Script | Purpose |
 |--------|---------|
-| `kiosk.sh` | Chromium kiosk mode startup |
-| `kletterhalle.service` | Systemd service for Next.js app |
-| `kiosk-browser.service` | Systemd service for kiosk browser |
-| `wpa_supplicant.conf` | WiFi configuration template |
+| `setup-pi.sh` | Base provisioning orchestrator; delegates to the two below |
+| `harden-pi.sh` | Firewall hardening (`ufw`: SSH + loopback-only `:3000`) |
+| `setup-systemd.sh` | `/usr/local/bin/{node,npm}` symlinks + installs both units + labwc autostart hook |
+| `deploy.sh` | Day-to-day update: `git pull` → `npm ci` → `npm run build` → restart services |
+| `kiosk.sh` | Launches Firefox in kiosk mode (Wayland) pointing at `127.0.0.1:3000` |
+| `kletterhalle.service` | systemd **system** service for the Next.js app |
+| `kiosk-browser.service` | systemd **user** service for the kiosk browser (started by the labwc autostart hook, not a target) |
+| `wpa_supplicant.conf` | WiFi template (legacy; prefer configuring WiFi in Raspberry Pi Imager) |
+
+See [RASPBERRY-PI-SETUP.md](./RASPBERRY-PI-SETUP.md) for the full setup, the
+nvm/symlink rationale, and the labwc autostart mechanism.
 
 ## Architecture
 
@@ -96,10 +103,21 @@ sudo usermod -a -G lp $USER
 sudo systemctl status kletterhalle.service
 journalctl -u kletterhalle.service -f
 ```
+If you see `status=203/EXEC`, the `node`/`npm` path is wrong (nvm) — re-run
+`./scripts/setup-systemd.sh` to re-point the `/usr/local/bin/{node,npm}` symlinks.
 
-**Display issues:**
+**Kiosk browser not appearing** (it's a *user* service started by the labwc
+autostart hook, not a systemd target):
+```bash
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+systemctl --user status kiosk-browser --no-pager
+grep kiosk-browser ~/.config/labwc/autostart || echo "hook missing — re-run setup-systemd.sh"
+```
+
+**Display issues (Wayland):**
 - Check `/boot/firmware/config.txt` for correct display settings
-- Run `xinput_calibrator` to calibrate touch
+- Touch is plug-and-play under Wayland/libinput on the official panel; check
+  detection with `dmesg | grep -i -E 'dsi|hdmi|edid'`
 
 ### Payment fulfillment & receipt recovery
 
@@ -130,9 +148,12 @@ TWINT redirect, and the reader flow are all local or outbound, and the LAN
 cannot reach the payment/print/fulfillment routes. To reach the app from your
 laptop for debugging, use an SSH port-forward:
 ```bash
-ssh -L 3000:127.0.0.1:3000 pi@<kiosk-host>
+ssh -L 3000:127.0.0.1:3000 francesco@<kiosk-host>
 # then open http://localhost:3000 on your laptop
 ```
+To watch the **live kiosk screen** instead (not just the app), enable the
+built-in VNC mirror — see *Remote access & screen mirroring* in
+[RASPBERRY-PI-SETUP.md](./RASPBERRY-PI-SETUP.md).
 
 ## Support
 
