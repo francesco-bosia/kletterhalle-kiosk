@@ -76,56 +76,6 @@ sudo ufw allow from 127.0.0.1 to any port 3000
 sudo ufw --force enable
 print_status "Firewall configured"
 
-# Create kiosk directories
-echo ""
-echo "Creating kiosk directories..."
-mkdir -p ~/kiosk
-mkdir -p ~/kletterhalle-kiosk
-mkdir -p ~/.config/autostart
-print_status "Directories created"
-
-# Create kiosk script
-echo ""
-echo "Creating kiosk startup script..."
-cat > ~/kiosk/kiosk.sh << 'EOF'
-#!/bin/bash
-# Wait for Next.js to start
-sleep 10
-
-# Disable screen blanking
-xset s off
-xset -dpms
-xset s noblank
-
-# Start Chromium in kiosk mode
-chromium-browser \
-  --kiosk \
-  --disable-restore-session-state \
-  --no-first-run \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
-  --disable-translate \
-  --noerrdialogs \
-  --check-for-update-interval=31536000 \
-  --touch-events=enabled \
-  --disable-pinch \
-  --overscroll-history-navigation=0 \
-  http://localhost:3000
-EOF
-chmod +x ~/kiosk/kiosk.sh
-print_status "Kiosk script created"
-
-# Create autostart desktop entry
-echo ""
-echo "Creating autostart entry..."
-cat > ~/.config/autostart/kiosk.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Kiosk
-Exec=/home/pi/kiosk/kiosk.sh
-X-GNOME-Autostart-enabled=true
-EOF
-print_status "Autostart entry created"
 
 # Create systemd service
 echo ""
@@ -137,8 +87,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/kletterhalle-kiosk
+User=francesco
+WorkingDirectory=/home/francesco/Documents/kletterhalle-kiosk
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
@@ -148,6 +98,16 @@ Environment=NODE_ENV=production
 WantedBy=multi-user.target
 EOF
 print_status "Systemd service created"
+
+# Install kiosk browser user service
+echo ""
+echo "Installing kiosk browser user service..."
+mkdir -p ~/.config/systemd/user
+cp ~/Documents/kletterhalle-kiosk/scripts/kiosk-browser.service \
+   ~/.config/systemd/user/kiosk-browser.service
+systemctl --user daemon-reload
+systemctl --user enable kiosk-browser.service
+print_status "Kiosk browser user service installed"
 
 # Add user to lp group for printer access
 echo ""
@@ -184,15 +144,15 @@ echo "=============================================="
 echo ""
 echo "Next steps:"
 echo ""
-echo "1. Copy your application to ~/kletterhalle-kiosk/"
-echo "   scp -r .next package.json package-lock.json .env.local pi@raspberrypi.local:~/kletterhalle-kiosk/"
+echo "1. Copy your application to ~/Documents/kletterhalle-kiosk/"
+echo "   scp -r .next package.json package-lock.json .env.local francesco@raspberrypi.local:~/Documents/kletterhalle-kiosk/"
 echo ""
 echo "2. Install dependencies:"
-echo "   cd ~/kletterhalle-kiosk && npm install --production"
+echo "   cd ~/Documents/kletterhalle-kiosk && npm install --production"
 echo ""
-echo "3. Enable and start the service:"
-echo "   sudo systemctl enable kletterhalle.service"
-echo "   sudo systemctl start kletterhalle.service"
+echo "3. Enable and start the services:"
+echo "   sudo systemctl enable --now kletterhalle.service"
+echo "   systemctl --user enable --now kiosk-browser.service"
 echo ""
 echo "4. Connect hardware:"
 echo "   - USB thermal printer"
@@ -201,4 +161,5 @@ echo ""
 echo "5. Reboot to test kiosk mode:"
 echo "   sudo reboot"
 echo ""
-print_warning "Note: You need to log out and back in for group changes to take effect."
+print_warning "Note: On first boot, you must log in once at the physical screen"
+print_warning "for the kiosk browser to start. The server starts automatically."
