@@ -116,4 +116,31 @@ describe('buildPayloadsFromMetadata', () => {
       )
     ).toThrow(/Unknown product/);
   });
+
+  it('throws PermanentFulfillmentError when cartData is valid JSON but not an array', () => {
+    expect(() =>
+      buildPayloadsFromMetadata(
+        { cartData: '{}', lang: 'it', paymentMethod: 'card' },
+        { transactionId: 'pi_5', stripeIds: { paymentIntent: 'pi_5' }, chargedAmount: 700 }
+      )
+    ).toThrow(PermanentFulfillmentError);
+  });
+
+  it('throws PermanentFulfillmentError when an item is missing qty', () => {
+    expect(() =>
+      buildPayloadsFromMetadata(
+        { cartData: JSON.stringify([{ id: 'adult' }]), lang: 'it', paymentMethod: 'card' },
+        { transactionId: 'pi_6', stripeIds: { paymentIntent: 'pi_6' }, chargedAmount: 700 }
+      )
+    ).toThrow(PermanentFulfillmentError);
+  });
+
+  it('throws PermanentFulfillmentError when an item is missing id', () => {
+    expect(() =>
+      buildPayloadsFromMetadata(
+        { cartData: JSON.stringify([{ qty: 1 }]), lang: 'it', paymentMethod: 'card' },
+        { transactionId: 'pi_7', stripeIds: { paymentIntent: 'pi_7' }, chargedAmount: 700 }
+      )
+    ).toThrow(PermanentFulfillmentError);
+  });
 });

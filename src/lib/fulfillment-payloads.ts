@@ -44,10 +44,18 @@ export function buildPayloadsFromMetadata(
   } catch {
     throw new PermanentFulfillmentError('Stripe metadata cartData is not valid JSON');
   }
+  if (!Array.isArray(items)) {
+    throw new PermanentFulfillmentError('Stripe metadata cartData is not an array');
+  }
   const lang: Lang = metadata.lang === 'en' ? 'en' : 'it';
   const method = metadata.paymentMethod === 'twint' ? 'twint' : 'card';
 
   const expanded = items.map((it) => {
+    if (typeof it.id !== 'string' || typeof it.qty !== 'number') {
+      throw new PermanentFulfillmentError(
+        `Stripe metadata cartData item has wrong shape: ${JSON.stringify(it)}`
+      );
+    }
     const p = getProductById(it.id);
     if (!p) throw new PermanentFulfillmentError(`Unknown product id: ${it.id}`);
     return {
