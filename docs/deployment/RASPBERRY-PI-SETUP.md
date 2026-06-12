@@ -180,15 +180,23 @@ sudo usermod -a -G netdev kiosk  # WiFi access
 
 On your laptop:
 
-```bash
-# Build the application
-npm run build
+> **IMPORTANT:** `NEXT_PUBLIC_*` variables are baked into the JavaScript bundle
+> at build time — the Pi's `.env.local` has **no effect** on them at runtime.
+> Always build with `npm run build:kiosk` (which sets the kiosk's client-side
+> values explicitly); a plain `npm run build` produces a bundle with your
+> laptop's dev settings (Terminal simulator mode) regardless of what the Pi's
+> env file says.
 
-# Copy to Raspberry Pi
-scp -r .next package.json package-lock.json .env.local pi@raspberrypi.local:~/kletterhalle-kiosk/
+```bash
+# Build the application with the kiosk's client-side env baked in
+npm run build:kiosk
+
+# Copy to Raspberry Pi (NOT .env.local — the Pi keeps its own, with the
+# live Stripe key and printer config; don't overwrite it with dev settings)
+scp -r .next package.json package-lock.json pi@raspberrypi.local:~/kletterhalle-kiosk/
 
 # Or use rsync for updates:
-rsync -avz --exclude 'node_modules' ./ pi@raspberrypi.local:~/kletterhalle-kiosk/
+rsync -avz --exclude 'node_modules' --exclude '.env.local' ./ pi@raspberrypi.local:~/kletterhalle-kiosk/
 ```
 
 ### Step 3: Install Dependencies on Pi

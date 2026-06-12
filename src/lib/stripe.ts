@@ -11,12 +11,10 @@ function getStripeClient(): Stripe {
     throw new Error('STRIPE_SECRET_KEY environment variable is not set');
   }
 
-  // Cast config to avoid type-version conflict from @stripe/terminal-js nested stripe@8
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Stripe(secretKey, {
-    apiVersion: '2026-05-27.dahlia',
+    apiVersion: '2026-05-27.dahlia' as const,
     typescript: true,
-  } as any);
+  });
 }
 
 /**

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:kiosk": "NEXT_PUBLIC_TERMINAL_SIMULATED=false NEXT_PUBLIC_TERMINAL_LOCATION_ID=tml_Giak8QJCC1CsBt NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000 next build",
+    "build:kiosk": "NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000 next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.7.0",
-    "@stripe/terminal-js": "^0.26.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "node-thermal-printer": "^4.6.0",
