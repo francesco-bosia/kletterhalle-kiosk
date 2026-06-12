@@ -19,12 +19,31 @@ function declineMessage(code: string | null, lang: 'it' | 'en'): string {
   return t('payment.declined', lang);
 }
 
+function ButtonSpinner() {
+  return (
+    <svg className="h-5 w-5 animate-spin text-current" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
 export function Step4Payment() {
   const { state, dispatch } = useWizard();
   const { phase, payment, cart, lang } = state;
 
   // Guard against double-clicks / concurrent flows
   const flowInProgress = useRef(false);
+
+  // Immediate click feedback: flip the start button into a disabled/spinner
+  // state the moment it's pressed, before the create-PI / reader round-trips
+  // resolve and the phase advances to 'paying'.
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    // Any phase transition (paying / failed / back to shopping on retry)
+    // clears the transient submitting state.
+    setSubmitting(false);
+  }, [phase]);
 
   // ── Reader availability (card screen, pre-payment) ─────────────────────────
   const [readerOnline, setReaderOnline] = useState<boolean | null>(null);
@@ -441,14 +460,18 @@ export function Step4Payment() {
         {/* Start payment */}
         {phase === 'shopping' && (
           <button
-            onClick={() => void handleCardPayment()}
-            disabled={readerOnline !== true}
-            className={`rounded-xl px-8 py-3 text-base font-semibold transition-colors ${
-              readerOnline === true
+            onClick={() => {
+              setSubmitting(true);
+              void handleCardPayment();
+            }}
+            disabled={readerOnline !== true || submitting}
+            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold transition-colors ${
+              readerOnline === true && !submitting
                 ? 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
                 : 'cursor-not-allowed bg-gray-300 text-gray-500'
             }`}
           >
+            {submitting && <ButtonSpinner />}
             {t('payment.startPayment', lang)}
           </button>
         )}
@@ -485,9 +508,18 @@ export function Step4Payment() {
 
         {phase === 'shopping' && (
           <button
-            onClick={handleTwintPayment}
-            className="rounded-xl bg-black px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-gray-800 active:bg-gray-700"
+            onClick={() => {
+              setSubmitting(true);
+              void handleTwintPayment();
+            }}
+            disabled={submitting}
+            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold transition-colors ${
+              submitting
+                ? 'cursor-not-allowed bg-gray-300 text-gray-500'
+                : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
+            }`}
           >
+            {submitting && <ButtonSpinner />}
             {lang === 'it' ? 'Vai al pagamento' : 'Proceed to payment'}
           </button>
         )}
