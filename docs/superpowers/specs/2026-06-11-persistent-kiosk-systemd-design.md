@@ -1,7 +1,7 @@
 # Persistent Kiosk via systemd — Design
 
 **Date:** 2026-06-11
-**Status:** Approved (pending spec review)
+**Status:** Approved — plan written
 
 ## Problem
 
@@ -28,7 +28,7 @@ they are owned by long-lived service managers instead of the login session.
 
 - **Repo path on the Pi:** `~/Documents/kletterhalle-kiosk/`.
 - **Login user:** the Pi's desktop login user (referred to below as
-  `<pi-user>`; substitute the real username, e.g. `pi`). System-service files
+  `francesco`). System-service files
   must use this user and the absolute repo path.
 - **Password is kept** on the desktop (no passwordless auto-login). Consequence:
   the browser cannot appear on a bare power cycle until someone logs in
@@ -67,8 +67,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=<pi-user>
-WorkingDirectory=/home/<pi-user>/Documents/kletterhalle-kiosk
+User=francesco
+WorkingDirectory=/home/francesco/Documents/kletterhalle-kiosk
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
