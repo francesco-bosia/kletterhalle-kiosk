@@ -50,11 +50,11 @@ export function StepFooter() {
         {/* Continue button (with optional season-ticket hint to its left) */}
         <div className="flex items-center gap-3 shrink-0">
           {showSeasonHint && (
-            <p className="max-w-[10rem] text-right text-xs leading-tight text-gray-500">
-              Hai un abbonamento? Premi «Continua» per le scarpette.
+            <p className="whitespace-nowrap text-right text-[11px] leading-tight text-gray-500">
+              Premi «Continua» per le scarpette.
               <br />
-              <span className="text-gray-400">
-                Have a season ticket? Tap &lsquo;Continue&rsquo; for shoes.
+              <span className="italic text-gray-400">
+                Tap &lsquo;Continue&rsquo; for shoes.
               </span>
             </p>
           )}
