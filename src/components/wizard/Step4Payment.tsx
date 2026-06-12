@@ -64,6 +64,8 @@ export function Step4Payment() {
     const startedAt = Date.now();
     let graceDeadline: number | null = null;
     let busySeen = false;
+    let tickRunning = false;
+    setSecondsLeft(Math.ceil(TAP_TIMEOUT_MS / 1000));
 
     const stop = (fn: () => void) => {
       if (!active) return;
@@ -101,38 +103,43 @@ export function Step4Payment() {
     };
 
     const tick = async () => {
-      if (!active) return;
-      const elapsed = Date.now() - startedAt;
-      setSecondsLeft(Math.max(0, Math.ceil((TAP_TIMEOUT_MS - elapsed) / 1000)));
-
-      const wantsCancel = cancelRequested.current || elapsed >= TAP_TIMEOUT_MS;
-      const inGrace = graceDeadline !== null && Date.now() < graceDeadline;
-      if (wantsCancel && !inGrace) {
-        await requestCancel();
-        if (!active) return;
-        if (graceDeadline !== null && Date.now() < graceDeadline) {
-          // just entered grace — fall through to a state poll below
-        } else {
-          return;
-        }
-      }
-
+      if (!active || tickRunning) return;
+      tickRunning = true;
       try {
-        const res = await fetch(`/api/terminal/state?paymentIntentId=${piId}`);
-        if (!res.ok) return; // transient — keep polling
-        const data = await res.json();
-        if (!active) return;
-        if (data.state === 'succeeded') {
-          stop(() => dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId: piId }));
-        } else if (data.state === 'declined') {
-          stop(() =>
-            dispatch({ type: 'PAYMENT_FAILED', error: declineMessage(data.code ?? null, lang) })
-          );
-        } else if (data.state === 'canceled') {
-          stop(() => dispatch({ type: 'RETRY_PAYMENT' }));
+        const elapsed = Date.now() - startedAt;
+        setSecondsLeft(Math.max(0, Math.ceil((TAP_TIMEOUT_MS - elapsed) / 1000)));
+
+        const wantsCancel = cancelRequested.current || elapsed >= TAP_TIMEOUT_MS;
+        const inGrace = graceDeadline !== null && Date.now() < graceDeadline;
+        if (wantsCancel && !inGrace) {
+          await requestCancel();
+          if (!active) return;
+          if (graceDeadline !== null && Date.now() < graceDeadline) {
+            // just entered grace — fall through to a state poll below
+          } else {
+            return;
+          }
         }
-      } catch {
-        // transient poll error — keep polling; the 30s timeout bounds the wait
+
+        try {
+          const res = await fetch(`/api/terminal/state?paymentIntentId=${piId}`);
+          if (!res.ok) return; // transient — keep polling
+          const data = await res.json();
+          if (!active) return;
+          if (data.state === 'succeeded') {
+            stop(() => dispatch({ type: 'PAYMENT_SUCCEEDED', transactionId: piId }));
+          } else if (data.state === 'declined') {
+            stop(() =>
+              dispatch({ type: 'PAYMENT_FAILED', error: declineMessage(data.code ?? null, lang) })
+            );
+          } else if (data.state === 'canceled') {
+            stop(() => dispatch({ type: 'RETRY_PAYMENT' }));
+          }
+        } catch {
+          // transient poll error — keep polling; the 30s timeout bounds the wait
+        }
+      } finally {
+        tickRunning = false;
       }
     };
 
@@ -178,9 +185,12 @@ export function Step4Payment() {
         if (!payRes.ok) {
           if (payData.error === 'payment-not-payable' && existingPiId) {
             // Stale PI from an earlier attempt (e.g. canceled by timeout):
-            // start over with a fresh one.
+            // start over with a fresh one. Await so the outer finally doesn't
+            // reopen the reentrancy guard mid-flight; setting the flag false
+            // first lets the inner guard pass synchronously (no gap).
             flowInProgress.current = false;
-            return handleCardPayment();
+            await handleCardPayment();
+            return;
           }
           dispatch({
             type: 'PAYMENT_FAILED',
