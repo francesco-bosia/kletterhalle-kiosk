@@ -1,7 +1,7 @@
 'use client';
 
 import { useWizard } from '@/lib/wizard-context';
-import { LAST_SHOPPING_STEP } from '@/lib/wizard';
+import { LAST_SHOPPING_STEP, isContinueDisabled } from '@/lib/wizard';
 import { cartTotal } from '@/lib/cart';
 import { formatChf } from '@/lib/money';
 
@@ -10,7 +10,7 @@ export function StepFooter() {
   const { step, cart, view } = state;
 
   const total = cartTotal(cart);
-  const isContinueDisabled = (step === 1 && total === 0) || (view === 'penalty' && total === 0);
+  const continueDisabled = isContinueDisabled(view, step, total);
 
   // Bilingual button labels — Italian primary (top), English secondary (below)
   const buttonLabels = {
@@ -23,7 +23,7 @@ export function StepFooter() {
   const currentLabel = buttonLabels[step as keyof typeof buttonLabels];
 
   function handleContinue() {
-    if (isContinueDisabled) return;
+    if (continueDisabled) return;
     const nextStep =
       view === 'penalty' && step <= LAST_SHOPPING_STEP ? 3 : ((step + 1) as 1 | 2 | 3 | 4);
     dispatch({ type: 'GO_TO_STEP', step: nextStep });
@@ -46,17 +46,17 @@ export function StepFooter() {
         {/* Continue button */}
         <button
           onClick={handleContinue}
-          disabled={isContinueDisabled}
+          disabled={continueDisabled}
           className={`rounded-3xl px-8 py-3 transition-colors flex flex-col items-center shrink-0 ${
-            isContinueDisabled
+            continueDisabled
               ? 'cursor-not-allowed bg-gray-100'
               : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
           }`}
         >
-          <span className={`text-lg font-bold leading-tight ${isContinueDisabled ? 'text-gray-300' : 'text-white'}`}>
+          <span className={`text-lg font-bold leading-tight ${continueDisabled ? 'text-gray-300' : 'text-white'}`}>
             {currentLabel.it}
           </span>
-          <span className={`text-sm italic font-medium leading-tight ${isContinueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
+          <span className={`text-sm italic font-medium leading-tight ${continueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
             {currentLabel.en}
           </span>
         </button>
