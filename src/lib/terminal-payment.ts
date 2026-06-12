@@ -126,6 +126,9 @@ export async function getPaymentState(
     if (action.status === 'failed') {
       return { state: 'declined', code: action.failure_code ?? null };
     }
+    // status 'succeeded' (or anything else) deliberately falls through to the
+    // PI retrieve below — the PI is the authoritative success signal and the
+    // only place onSucceeded is fired. Do NOT short-circuit success here.
   }
 
   const pi = await stripe.paymentIntents.retrieve(paymentIntentId);

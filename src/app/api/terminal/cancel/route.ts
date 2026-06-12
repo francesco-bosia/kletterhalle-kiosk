@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
+import { fulfillPaymentIntent } from '@/lib/fulfillment';
 import {
   cancelPayment,
   getReaderId,
@@ -19,6 +20,12 @@ export async function POST(request: NextRequest) {
     }
     const stripe = getStripe() as unknown as StripeTerminalClient;
     const result = await cancelPayment(stripe, getReaderId(), paymentIntentId);
+    // Cancel-race: the charge landed just as we tried to cancel. Fulfill now
+    // (idempotent, mutexed, sweep-backstopped) so the ticket prints
+    // immediately instead of waiting for the next reconcile sweep.
+    if (!result.busy && result.state === 'succeeded') {
+      void fulfillPaymentIntent(getStripe(), paymentIntentId);
+    }
     return NextResponse.json(result);
   } catch (error) {
     console.error('Terminal cancel error:', error);
