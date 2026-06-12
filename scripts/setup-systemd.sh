@@ -61,13 +61,34 @@ sudo systemctl daemon-reload
 print_status "kletterhalle.service installed"
 
 # --- User service: the kiosk browser ----------------------------------------
+# The browser unit is NOT enabled into a target: Raspberry Pi OS's Wayland
+# session never activates graphical-session.target. Instead the compositor's
+# autostart launches it once the Wayland socket is up. We install the unit (so
+# `systemctl --user start/restart/status kiosk-browser` and Restart=always
+# work) and add the autostart hook that triggers it on session start.
 echo ""
 echo "Installing kiosk-browser.service (user)..."
 mkdir -p ~/.config/systemd/user
 cp "$SCRIPT_DIR/kiosk-browser.service" ~/.config/systemd/user/kiosk-browser.service
 systemctl --user daemon-reload
-systemctl --user enable kiosk-browser.service
-print_status "kiosk-browser.service installed and enabled"
+print_status "kiosk-browser.service installed"
+
+echo ""
+echo "Adding compositor autostart hook..."
+AUTOSTART_LINE='systemctl --user start kiosk-browser.service &'
+if pgrep -x wayfire >/dev/null 2>&1; then
+    print_warning "wayfire detected. Add to [autostart] in ~/.config/wayfire.ini:"
+    print_warning "    kiosk = systemctl --user start kiosk-browser.service"
+else
+    # labwc (Raspberry Pi OS default): autostart is a shell script it sources.
+    mkdir -p ~/.config/labwc
+    if grep -qF kiosk-browser ~/.config/labwc/autostart 2>/dev/null; then
+        print_status "labwc autostart hook already present"
+    else
+        echo "$AUTOSTART_LINE" >> ~/.config/labwc/autostart
+        print_status "labwc autostart hook added to ~/.config/labwc/autostart"
+    fi
+fi
 
 # --- Enable + start the server ----------------------------------------------
 echo ""
@@ -77,6 +98,7 @@ print_status "kletterhalle.service enabled and started"
 
 echo ""
 print_status "systemd setup complete."
-print_warning "The kiosk browser is bound to the graphical session: it starts when"
-print_warning "you log in at the physical screen (no linger). Server is up now —"
+print_warning "The kiosk browser is launched by the compositor autostart hook, so it"
+print_warning "starts when the desktop session loads (log in at the physical screen,"
+print_warning "or enable autologin). Server is up now —"
 print_warning "verify with: curl -sf -o /dev/null http://127.0.0.1:3000 && echo OK"

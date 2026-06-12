@@ -1,8 +1,13 @@
 [Unit]
 Description=Kletterhalle Kiosk Browser
 Documentation=https://github.com/your-org/kletterhalle-kiosk
-After=graphical-session.target
-PartOf=graphical-session.target
+# This service is started by the labwc autostart hook
+# (~/.config/labwc/autostart), NOT by a systemd target. Raspberry Pi OS's
+# Wayland session does not activate the user `graphical-session.target`, so a
+# WantedBy/PartOf on it never fires. The compositor launches us once the
+# Wayland socket is up; Restart=always then keeps Firefox respawning if it
+# crashes or is closed. There is intentionally no [Install] section: the unit
+# is triggered explicitly, not enabled into a target.
 
 [Service]
 Type=simple
@@ -14,6 +19,3 @@ RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=kiosk-browser
-
-[Install]
-WantedBy=graphical-session.target
