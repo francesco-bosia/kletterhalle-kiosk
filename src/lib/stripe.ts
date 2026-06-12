@@ -33,20 +33,6 @@ export function getStripe(): Stripe {
 }
 
 /**
- * Get Stripe publishable key for client-side use.
- * Throws error if key is not configured.
- */
-export function getPublishableKey(): string {
-  const key = process.env.STRIPE_PUBLISHABLE_KEY;
-
-  if (!key) {
-    throw new Error('STRIPE_PUBLISHABLE_KEY environment variable is not set');
-  }
-
-  return key;
-}
-
-/**
  * Calculate amount in cents from CHF value.
  * e.g., 25.00 CHF -> 2500 cents
  */
