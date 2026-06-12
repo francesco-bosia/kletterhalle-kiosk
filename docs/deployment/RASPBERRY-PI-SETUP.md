@@ -328,11 +328,42 @@ sudo usermod -a -G lp $USER
 echo "Test print" | sudo tee /dev/usb/lp0
 ```
 
-### Step 2: Connect WisePOS E to WiFi
+### Step 2: Connect WisePOS E to WiFi and register it
 
 1. Power on the reader
-2. Follow on-screen WiFi setup
-3. Connect to same network as Raspberry Pi
+2. Follow the on-screen WiFi setup (any network with internet access — the
+   reader does **not** need to share the Pi's LAN)
+3. In the Stripe Dashboard, go to **Terminal → Readers** and confirm the
+   reader shows **online** in the correct mode (test or live)
+4. Set `STRIPE_TERMINAL_READER_ID` in `/home/pi/kletterhalle-kiosk/.env.local`
+   to that reader's `tmr_…` id
+
+## Card reader (server-driven Terminal)
+
+The kiosk drives the WisePOS E through Stripe's cloud
+(`process_payment_intent` on the reader). The reader and the kiosk never
+talk over the local network — the reader only needs working internet
+(any network). Requirements:
+
+- Reader registered to the account's Terminal location (Dashboard →
+  Terminal → Readers) **in the matching mode** (test/live).
+- `STRIPE_TERMINAL_READER_ID` set to that reader's `tmr_…` id on the Pi.
+- Reader shows "online" in the Dashboard.
+
+There is no same-network, local-DNS, or browser-permission requirement:
+this integration replaced the Terminal JS SDK in 2026-06 (see
+docs/superpowers/specs/2026-06-12-server-driven-terminal-design.md).
+
+### One-time cleanup on already-provisioned Pis
+
+The old JS SDK integration required two local workarounds — remove them:
+
+```bash
+# 1. hosts-file pin for the reader hostname
+sudo sed -i '/stripe-terminal-local-reader\.net/d' /etc/hosts
+# 2. Firefox local-network policy (if present)
+sudo rm -f /etc/firefox/policies/policies.json
+```
 
 ### Step 3: Verify Full Flow
 

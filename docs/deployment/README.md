@@ -71,7 +71,8 @@ The `scripts/` directory contains:
 - [ ] Next.js app auto-starts
 - [ ] Touch display responsive
 - [ ] Printer works from Raspberry Pi
-- [ ] Card reader connects to Raspberry Pi WiFi
+- [ ] `STRIPE_TERMINAL_READER_ID` set to reader's `tmr_…` id in `.env.local`
+- [ ] Card reader shows **online** in Stripe Dashboard
 - [ ] System recovers from power loss
 
 ## Troubleshooting
@@ -85,10 +86,10 @@ sudo usermod -a -G lp $USER
 # Log out and back in
 ```
 
-**Card reader not connecting:**
-- Verify reader and kiosk are on same WiFi network
-- Check `STRIPE_TERMINAL_LOCATION_ID` in `.env.local`
-- Check Stripe Dashboard for reader registration
+**Card reader not responding:**
+- Verify reader is powered on and has internet access
+- Check Stripe Dashboard — reader must show **online** under Terminal → Readers
+- Verify `STRIPE_TERMINAL_READER_ID` in `.env.local` matches the reader's `tmr_…` id
 
 **Application not starting:**
 ```bash

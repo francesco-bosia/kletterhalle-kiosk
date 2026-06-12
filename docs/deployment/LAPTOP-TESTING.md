@@ -5,10 +5,9 @@ This guide covers setting up and testing the kiosk system on your laptop before 
 ## Prerequisites
 
 - Laptop with Node.js 20+ installed
-- BBPOS WisePOS E card reader
-- Epson TM-T20III thermal printer
+- Epson TM-T20III thermal printer (optional for receipt testing)
 - USB cable for printer
-- WiFi network (same for laptop and card reader)
+- Internet access (card reader communicates with Stripe's cloud, not the laptop directly)
 
 ## Step 1: Configure Printer
 
@@ -52,23 +51,54 @@ PRINTER_DEVICE=/dev/usb/lp0   # Linux
 # PRINTER_DEVICE=/dev/usb/lp0  # Adjust for your OS
 ```
 
-## Step 3: Register Card Reader
+## Step 3: Configure card reader
+
+The kiosk uses server-driven Terminal — payments are dispatched to the reader
+via Stripe's cloud, so the reader does **not** need to be on the same network
+as the laptop.
+
+### Option A: simulated reader (no hardware needed)
+
+A simulated WisePOS E has been created in test mode:
+`tmr_GikXhw2oN5y6Rd` at location `tml_GXxBaAe9LCuEk1`
+(created with `registration_code=simulated-wpe`). Point the dev env at it:
+
+```bash
+# .env.local
+STRIPE_TERMINAL_READER_ID=tmr_GikXhw2oN5y6Rd
+```
+
+Start a card payment in the kiosk, then simulate the customer tapping a
+card from your terminal:
+
+```bash
+set -a; source .env.local; set +a
+READER=tmr_GikXhw2oN5y6Rd
+# success (default Visa):
+curl -s -u "$STRIPE_SECRET_KEY:" \
+  -X POST "https://api.stripe.com/v1/test_helpers/terminal/readers/$READER/present_payment_method"
+# decline:
+curl -s -u "$STRIPE_SECRET_KEY:" \
+  -X POST "https://api.stripe.com/v1/test_helpers/terminal/readers/$READER/present_payment_method" \
+  -d "type=card_present" -d "card_present[number]=4000000000000002"
+```
+
+### Option B: physical WisePOS E (test mode)
 
 1. Log in to [Stripe Dashboard](https://dashboard.stripe.com/terminal)
-2. Go to **Terminal > Locations**
-3. Create a location if you haven't already
-4. Click **Add reader**
-5. Power on your WisePOS E
-6. Follow on-screen instructions to connect to WiFi
-7. The reader should appear in the dashboard for registration
+2. Go to **Terminal > Locations** and create a location if needed
+3. Click **Add reader**, power on the WisePOS E, and follow the on-screen
+   instructions to connect it to any WiFi with internet access
+4. Once it shows **online** in the Dashboard, copy its `tmr_…` id
+5. Set `STRIPE_TERMINAL_READER_ID=tmr_…` in `.env.local`
 
 ## Step 4: Verify Environment
 
 Ensure these are set in `.env.local`:
 
 ```bash
-# Stripe Terminal Location ID
-STRIPE_TERMINAL_LOCATION_ID=tml_xxx  # Your location ID
+# Server-driven Terminal: reader id (tmr_…)
+STRIPE_TERMINAL_READER_ID=tmr_xxx
 
 # Stripe API Keys (test mode for testing)
 STRIPE_SECRET_KEY=sk_test_xxx
@@ -89,9 +119,9 @@ Open http://localhost:3000 and:
 
 1. Add tickets to cart
 2. Proceed to payment
-3. The card reader should activate
-4. Tap/insert card to complete payment
-5. Verify receipt prints
+3. The reader activates (or, for simulated reader, use the `curl` command
+   above to present a card)
+4. Verify the payment completes and a receipt prints
 
 ## Troubleshooting
 
@@ -108,12 +138,12 @@ ls -la /dev/usb/lp0
 groups $USER  # Should include 'lp'
 ```
 
-### Card reader not connecting
+### Card reader not responding
 
-1. Verify reader is powered on
-2. Check WiFi connection (reader and laptop on same network)
-3. Verify `STRIPE_TERMINAL_LOCATION_ID` matches your Stripe location
-4. Check browser console for connection errors
+1. Verify reader is powered on and has internet access
+2. Check the Dashboard — the reader must show **online** under Terminal → Readers
+3. Verify `STRIPE_TERMINAL_READER_ID` in `.env.local` matches the reader's `tmr_…` id
+4. Check the Next.js server logs for errors from `/api/pay` or `/api/fulfill`
 
 ### Receipt not printing
 
