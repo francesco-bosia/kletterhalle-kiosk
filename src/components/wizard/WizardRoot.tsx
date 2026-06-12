@@ -3,7 +3,6 @@
 import { useReducer } from 'react';
 import { wizardReducer, createInitialState } from '@/lib/wizard';
 import { WizardReactContext } from '@/lib/wizard-context';
-import { TerminalProvider } from '@/components/terminal-provider';
 import { WizardChrome } from '@/components/wizard/WizardChrome';
 
 export default function WizardRoot() {
@@ -11,9 +10,7 @@ export default function WizardRoot() {
 
   return (
     <WizardReactContext.Provider value={{ state, dispatch }}>
-      <TerminalProvider>
-        <WizardChrome />
-      </TerminalProvider>
+      <WizardChrome />
     </WizardReactContext.Provider>
   );
 }
