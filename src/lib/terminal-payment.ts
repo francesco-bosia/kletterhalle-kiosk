@@ -150,14 +150,30 @@ export async function cancelPayment(
     await stripe.terminal.readers.cancelAction(readerId);
   } catch (err) {
     if (stripeErrorCode(err) === 'terminal_reader_busy') return { busy: true };
-    // No cancelable action (none in flight / already finished): fall through.
+    // Otherwise there was no action to cancel (the common case) or cancelAction
+    // itself failed. Either way we still try to void the PI below; log so an
+    // unexpected cancelAction failure leaves an audit trail.
+    console.warn('Terminal cancelAction did not cancel an action:', stripeErrorCode(err) ?? err);
   }
   try {
     await stripe.paymentIntents.cancel(paymentIntentId);
     return { busy: false, state: 'canceled' };
   } catch {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (pi.status === 'succeeded') return { busy: false, state: 'succeeded' };
-    return { busy: false, state: 'canceled' };
+    // PI cancel failed — most likely because the charge already landed.
+    // Determine the true state; never let this function throw (the kiosk
+    // caller relies on always getting a CancelPaymentResult). On any
+    // uncertainty default to 'canceled' (no ticket) — the reconcile sweep
+    // still fulfills a genuinely-paid PI as a backstop.
+    try {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (pi.status === 'succeeded') return { busy: false, state: 'succeeded' };
+      if (pi.status !== 'canceled') {
+        console.error(`Cancel: PI ${paymentIntentId} in unexpected state '${pi.status}' after cancel failed`);
+      }
+      return { busy: false, state: 'canceled' };
+    } catch (retrieveErr) {
+      console.error(`Cancel: could not determine state of PI ${paymentIntentId}:`, retrieveErr);
+      return { busy: false, state: 'canceled' };
+    }
   }
 }

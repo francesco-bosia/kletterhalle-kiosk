@@ -33,6 +33,7 @@ function fakeStripe(opts: {
   processError?: { code?: string };
   cancelActionError?: { code?: string };
   piCancelError?: boolean;
+  piRetrieveError?: boolean;
 }): StripeTerminalClient {
   return {
     terminal: {
@@ -49,7 +50,10 @@ function fakeStripe(opts: {
       },
     },
     paymentIntents: {
-      retrieve: vi.fn(async () => ({ id: PI, status: opts.piStatus ?? 'requires_payment_method' })),
+      retrieve: vi.fn(async () => {
+        if (opts.piRetrieveError) throw { code: 'api_error' };
+        return { id: PI, status: opts.piStatus ?? 'requires_payment_method' };
+      }),
       cancel: vi.fn(async () => {
         if (opts.piCancelError) throw { code: 'payment_intent_unexpected_state' };
         return {};
@@ -119,6 +123,16 @@ describe('getPaymentState', () => {
     const s = fakeStripe({});
     expect(await getPaymentState(s, READER, PI, noop)).toEqual({ state: 'waiting' });
   });
+
+  it('confirms success via the PI even when the reader action says succeeded', async () => {
+    const onSucceeded = vi.fn();
+    const s = fakeStripe({
+      reader: reader({ action: action('succeeded') }),
+      piStatus: 'succeeded',
+    });
+    await getPaymentState(s, READER, PI, onSucceeded);
+    expect(s.paymentIntents.retrieve).toHaveBeenCalled();
+  });
 });
 
 describe('startPayment', () => {
@@ -162,6 +176,11 @@ describe('cancelPayment', () => {
 
   it('reports canceled when PI cancel fails because it was already canceled', async () => {
     const s = fakeStripe({ piCancelError: true, piStatus: 'canceled' });
+    expect(await cancelPayment(s, READER, PI)).toEqual({ busy: false, state: 'canceled' });
+  });
+
+  it('never throws when PI cancel and the follow-up retrieve both fail', async () => {
+    const s = fakeStripe({ piCancelError: true, piRetrieveError: true });
     expect(await cancelPayment(s, READER, PI)).toEqual({ busy: false, state: 'canceled' });
   });
 });
