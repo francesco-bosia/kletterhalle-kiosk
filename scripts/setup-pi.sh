@@ -14,7 +14,7 @@
 #   - Internet connection
 #
 
-set -e
+set -euo pipefail
 
 echo "=============================================="
 echo "  Kletterhalle Kiosk - Raspberry Pi Setup"
@@ -61,11 +61,11 @@ fi
 NODE_VERSION=$(node --version)
 print_status "Node.js installed: $NODE_VERSION"
 
-# Install Chromium and tools
+# Install Firefox and utilities
 echo ""
-echo "Installing Chromium and utilities..."
-sudo apt install -y chromium-browser git vim ufw unclutter
-print_status "Chromium and utilities installed"
+echo "Installing Firefox and utilities..."
+sudo apt install -y firefox-esr git vim ufw
+print_status "Firefox and utilities installed"
 
 # Configure firewall
 echo ""
