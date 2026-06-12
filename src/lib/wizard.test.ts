@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { wizardReducer, createInitialState } from './wizard';
+import { wizardReducer, createInitialState, isContinueDisabled } from './wizard';
 
 describe('wizard penalty view', () => {
   it('defaults to the normal view', () => {
@@ -38,5 +38,27 @@ describe('wizard penalty view', () => {
     const start = { ...createInitialState(), view: 'penalty' as const };
     const next = wizardReducer(start, { type: 'RESET_SESSION' });
     expect(next.view).toBe('normal');
+  });
+});
+
+describe('isContinueDisabled', () => {
+  it('allows leaving the tickets step (step 1) with an empty cart', () => {
+    expect(isContinueDisabled('normal', 1, 0)).toBe(false);
+  });
+
+  it('blocks leaving the shoes step (step 2) with an empty cart', () => {
+    expect(isContinueDisabled('normal', 2, 0)).toBe(true);
+  });
+
+  it('allows leaving the shoes step (step 2) once the cart has a total', () => {
+    expect(isContinueDisabled('normal', 2, 1600)).toBe(false);
+  });
+
+  it('blocks the penalty view while its total is zero', () => {
+    expect(isContinueDisabled('penalty', 1, 0)).toBe(true);
+  });
+
+  it('allows the penalty view once its total is set', () => {
+    expect(isContinueDisabled('penalty', 1, 10000)).toBe(false);
   });
 });

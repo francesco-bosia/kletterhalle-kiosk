@@ -5,6 +5,21 @@ import { cartReducer, type CartLine, type CartAction } from './cart';
 /** Highest wizard step that is still "shopping" (before the summary at step 3). */
 export const LAST_SHOPPING_STEP = 2;
 
+/**
+ * Whether the footer Continue button should be disabled.
+ * Normal flow: an empty cart may pass through Tickets (step 1) but cannot
+ * leave Shoes (step 2). The Summary step is read-only, so steps 3-4 need no
+ * guard. Penalty view stays blocked until its single line is added.
+ */
+export function isContinueDisabled(
+  view: WizardState['view'],
+  step: number,
+  total: number,
+): boolean {
+  if (view === 'penalty') return total === 0;
+  return step === 2 && total === 0;
+}
+
 // ── State type ─────────────────────────────────────────────────────────────────
 
 export interface WizardState {
