@@ -5,8 +5,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/kletterhalle-kiosk
+User=francesco
+WorkingDirectory=/home/francesco/Documents/kletterhalle-kiosk
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
@@ -16,10 +16,6 @@ Environment=NODE_ENV=production
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=kletterhalle
-
-# Security (optional, uncomment for production)
-# NoNewPrivileges=true
-# PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
