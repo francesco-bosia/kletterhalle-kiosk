@@ -22,6 +22,10 @@ export function StepFooter() {
 
   const currentLabel = buttonLabels[step as keyof typeof buttonLabels];
 
+  // On the tickets step, nudge season-ticket holders that they can skip ahead
+  // to shoes without buying a ticket (the cart-empty guard now sits on shoes).
+  const showSeasonHint = view === 'normal' && step === 1;
+
   function handleContinue() {
     if (continueDisabled) return;
     const nextStep =
@@ -43,23 +47,34 @@ export function StepFooter() {
           </span>
         </div>
 
-        {/* Continue button */}
-        <button
-          onClick={handleContinue}
-          disabled={continueDisabled}
-          className={`rounded-3xl px-8 py-3 transition-colors flex flex-col items-center shrink-0 ${
-            continueDisabled
-              ? 'cursor-not-allowed bg-gray-100'
-              : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
-          }`}
-        >
-          <span className={`text-lg font-bold leading-tight ${continueDisabled ? 'text-gray-300' : 'text-white'}`}>
-            {currentLabel.it}
-          </span>
-          <span className={`text-sm italic font-medium leading-tight ${continueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
-            {currentLabel.en}
-          </span>
-        </button>
+        {/* Continue button (with optional season-ticket hint to its left) */}
+        <div className="flex items-center gap-3 shrink-0">
+          {showSeasonHint && (
+            <p className="max-w-[10rem] text-right text-xs leading-tight text-gray-500">
+              Hai un abbonamento? Premi «Continua» per le scarpette.
+              <br />
+              <span className="text-gray-400">
+                Have a season ticket? Tap &lsquo;Continue&rsquo; for shoes.
+              </span>
+            </p>
+          )}
+          <button
+            onClick={handleContinue}
+            disabled={continueDisabled}
+            className={`rounded-3xl px-8 py-3 transition-colors flex flex-col items-center shrink-0 ${
+              continueDisabled
+                ? 'cursor-not-allowed bg-gray-100'
+                : 'bg-black text-white hover:bg-gray-800 active:bg-gray-700'
+            }`}
+          >
+            <span className={`text-lg font-bold leading-tight ${continueDisabled ? 'text-gray-300' : 'text-white'}`}>
+              {currentLabel.it}
+            </span>
+            <span className={`text-sm italic font-medium leading-tight ${continueDisabled ? 'text-gray-400' : 'text-white/90'}`}>
+              {currentLabel.en}
+            </span>
+          </button>
+        </div>
       </div>
     </footer>
   );
