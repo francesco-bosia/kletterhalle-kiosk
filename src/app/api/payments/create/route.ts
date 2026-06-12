@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
     if (paymentMethod === 'twint') {
       const checkoutSession = await stripe.checkout.sessions.create({
         customer_email: 'kiosk@spluia.ch',
-        payment_method_types: ['twint'],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payment_method_types: ['twint'] as any,
         line_items: expandedItems.map((item) => ({
           price_data: {
             currency: 'chf',

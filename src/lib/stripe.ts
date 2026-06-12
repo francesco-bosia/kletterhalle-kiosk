@@ -11,13 +11,12 @@ function getStripeClient(): Stripe {
     throw new Error('STRIPE_SECRET_KEY environment variable is not set');
   }
 
-  // Check if using test key (starts with sk_test_)
-  const isTestMode = secretKey.startsWith('sk_test_');
-
+  // Cast config to avoid type-version conflict from @stripe/terminal-js nested stripe@8
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Stripe(secretKey, {
-    apiVersion: '2026-01-28.clover' as const,
+    apiVersion: '2026-05-27.dahlia',
     typescript: true,
-  });
+  } as any);
 }
 
 /**
