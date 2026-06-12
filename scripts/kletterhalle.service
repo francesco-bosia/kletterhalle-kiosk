@@ -7,11 +7,19 @@ After=network.target
 Type=simple
 User=francesco
 WorkingDirectory=/home/francesco/Documents/kletterhalle-kiosk
-# Loopback only: nothing on the LAN may reach the app (kiosk browser + Stripe redirect are local; WisePOS E is outbound-only)
-ExecStart=/usr/bin/npm start -- -H 127.0.0.1
+# Loopback only: nothing on the LAN may reach the app (kiosk browser + Stripe
+# redirect are local; WisePOS E is outbound-only).
+#
+# node/npm are reached through the /usr/local/bin symlinks that
+# setup-systemd.sh creates, so this unit does not depend on the nvm
+# version-specific path (e.g. ~/.nvm/versions/node/vX.Y.Z/bin). On a Node
+# upgrade, re-point the symlinks (re-run setup-systemd.sh); the unit is unchanged.
+ExecStart=/usr/local/bin/npm start -- -H 127.0.0.1
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
+# npm's shebang resolves `node` via PATH; /usr/local/bin must be on it.
+Environment=PATH=/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Logging
 StandardOutput=journal
