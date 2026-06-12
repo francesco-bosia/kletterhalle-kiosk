@@ -54,7 +54,7 @@ function fakeStripe(overrides: {
         ...overrides.pi,
       })),
     },
-  } as unknown as StripeFulfillmentClient;
+  } satisfies StripeFulfillmentClient;
 }
 
 beforeEach(async () => {

@@ -71,13 +71,19 @@ function withMutex(
   return next;
 }
 
+type FulfillmentGateResult =
+  | {
+      ok: true;
+      metadata: Record<string, string> | null;
+      stripeIds: { paymentIntent?: string; checkoutSession?: string };
+      chargedAmount: number;
+    }
+  | { ok: false; outcome: 'pending' | 'not-payable' };
+
 async function executeFulfillment(
   deps: FulfillmentDeps,
   id: string,
-  gate: () => Promise<
-    | { ok: true; metadata: Record<string, string> | null; stripeIds: { paymentIntent?: string; checkoutSession?: string }; chargedAmount: number }
-    | { ok: false; outcome: 'pending' | 'not-payable' }
-  >
+  gate: () => Promise<FulfillmentGateResult>
 ): Promise<FulfillmentOutcome> {
   const claim = await deps.store.claim(id);
   if (claim === 'already-done') return 'already-fulfilled';
