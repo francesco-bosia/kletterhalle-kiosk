@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ops/dev scripts (bash, systemd units, standalone node tools) — not app source.
+    "scripts/**",
   ]),
 ]);
 
