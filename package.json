@@ -2,6 +2,9 @@
   "name": "kletterhalle-kiosk",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,22 +16,22 @@
   },
   "dependencies": {
     "lucide-react": "^0.563.0",
-    "next": "16.1.6",
+    "next": "16.4.2",
     "node-thermal-printer": "^4.6.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "stripe": "^22.2.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "stripe": "^22.6.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^2.1.9"
+    "vitest": "^5.0.5"
   }
 }

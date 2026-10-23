@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -10,11 +10,12 @@ import {
   type FulfillmentDeps,
   type StripeFulfillmentClient,
 } from '@/lib/fulfillment';
+import type { PrintPayload, TransactionLogPayload } from '@/lib/cart';
 
 let dir: string;
 let store: FulfillmentStore;
-let print: ReturnType<typeof vi.fn>;
-let log: ReturnType<typeof vi.fn>;
+let print: Mock<(p: PrintPayload) => Promise<void>>;
+let log: Mock<(p: TransactionLogPayload) => Promise<void>>;
 let deps: FulfillmentDeps;
 
 const META = {
@@ -60,8 +61,8 @@ function fakeStripe(overrides: {
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'engine-'));
   store = new FulfillmentStore(dir);
-  print = vi.fn(async () => {});
-  log = vi.fn(async () => {});
+  print = vi.fn<(p: PrintPayload) => Promise<void>>(async () => {});
+  log = vi.fn<(p: TransactionLogPayload) => Promise<void>>(async () => {});
   deps = { store, print, log };
 });
 

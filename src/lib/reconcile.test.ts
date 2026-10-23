@@ -1,14 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { FulfillmentStore } from '@/lib/fulfillment-store';
 import { reconcileOnce, type StripeReconcileClient } from '@/lib/reconcile';
+import type { FulfillmentOutcome, StripeFulfillmentClient } from '@/lib/fulfillment';
 
 let dir: string;
 let store: FulfillmentStore;
-let fulfillSession: ReturnType<typeof vi.fn>;
-let fulfillIntent: ReturnType<typeof vi.fn>;
+let fulfillSession: Mock<
+  (stripe: StripeFulfillmentClient, id: string) => Promise<FulfillmentOutcome>
+>;
+let fulfillIntent: Mock<
+  (stripe: StripeFulfillmentClient, id: string) => Promise<FulfillmentOutcome>
+>;
 
 const paidTwint = {
   id: 'cs_paid',
@@ -54,8 +59,12 @@ function fakeStripe(): StripeReconcileClient {
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'sweep-'));
   store = new FulfillmentStore(dir);
-  fulfillSession = vi.fn(async () => 'fulfilled');
-  fulfillIntent = vi.fn(async () => 'fulfilled');
+  fulfillSession = vi.fn<
+    (stripe: StripeFulfillmentClient, id: string) => Promise<FulfillmentOutcome>
+  >(async () => 'fulfilled');
+  fulfillIntent = vi.fn<
+    (stripe: StripeFulfillmentClient, id: string) => Promise<FulfillmentOutcome>
+  >(async () => 'fulfilled');
 });
 
 afterEach(async () => {

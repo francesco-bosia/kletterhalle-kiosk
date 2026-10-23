@@ -42,6 +42,7 @@ export function Step4Payment() {
   useEffect(() => {
     // Any phase transition (paying / failed / back to shopping on retry)
     // clears the transient submitting state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on phase change; refactor owed
     setSubmitting(false);
   }, [phase]);
 
@@ -74,6 +75,7 @@ export function Step4Payment() {
 
   useEffect(() => {
     if (payment.method !== 'card' || phase !== 'paying' || !payment.paymentIntentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset countdown when leaving the paying phase
       setSecondsLeft(null);
       return;
     }
@@ -208,6 +210,7 @@ export function Step4Payment() {
             // reopen the reentrancy guard mid-flight; setting the flag false
             // first lets the inner guard pass synchronously (no gap).
             flowInProgress.current = false;
+            // eslint-disable-next-line react-hooks/immutability -- self-retry; binding is initialized before any invocation
             await handleCardPayment();
             return;
           }
