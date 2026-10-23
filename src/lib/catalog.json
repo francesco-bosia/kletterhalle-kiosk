@@ -21,8 +21,8 @@
         {
           "id": "student",
           "label": {
-            "it": "Studenti <26",
-            "en": "Students <26"
+            "it": "Studenti <26 / AVS",
+            "en": "Students <26 / Seniors (AVS/AHV)"
           },
           "priceCents": 1300
         },
