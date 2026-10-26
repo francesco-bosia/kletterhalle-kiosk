@@ -49,7 +49,7 @@ data/fulfilled/
 
 # Third-party AI tool configs
 .adal/
-.agents/
+.agents/*
 .augment/
 .bob/
 .claude/*
@@ -85,6 +85,7 @@ skills-lock.json
 skills/
 # ...except the project's own skills (see also the .claude/* exception above)
 !.claude/skills/
+!.agents/skills/
 
 # Internal planning docs (not project source)
 docs/plans/
