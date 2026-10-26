@@ -52,7 +52,8 @@ data/fulfilled/
 .agents/
 .augment/
 .bob/
-.claude/
+.claude/*
+!.claude/skills/
 .codebuddy/
 .commandcode/
 .continue/
@@ -82,6 +83,8 @@ data/fulfilled/
 # Plugin artifacts
 skills-lock.json
 skills/
+# ...except the project's own skills (see also the .claude/* exception above)
+!.claude/skills/
 
 # Internal planning docs (not project source)
 docs/plans/
